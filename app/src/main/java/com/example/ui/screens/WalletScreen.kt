@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.local.AppDatabase
 import com.example.data.local.WalletHistoryEntity
 import kotlinx.coroutines.launch
@@ -138,7 +140,7 @@ fun WalletScreen() {
     }
     
     if (showWithdrawDialog) {
-        WithdrawDialog(
+        WithdrawScreen(
             availableBalance = balance, // passing balance as available
             onDismiss = { showWithdrawDialog = false },
             onSubmitted = { amount, method ->
@@ -156,6 +158,7 @@ fun WalletScreen() {
                 }
             }
         )
+        return
     }
 
     Scaffold(
@@ -164,16 +167,7 @@ fun WalletScreen() {
             com.example.ui.screens.BeautifulHeader {
                 TopAppBar(
                     title = { Text("My Wallet", fontWeight = FontWeight.Bold, color = Color.Black) },
-                    actions = {
-                        IconButton(onClick = { showHistoryScreen = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.History,
-                                contentDescription = "View History",
-                                tint = Color.Black,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    },
+                    actions = {}, // History icon disappeared!
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
@@ -205,7 +199,7 @@ fun WalletScreen() {
                                 ModernBalanceCard(
                                     title = "Deposit Balance",
                                     amount = rechargeBalance + deposited,
-                                    bgColor = Color(0xFF1E1E1E), // Black
+                                    isEarning = false,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .aspectRatio(16f / 9f)
@@ -214,7 +208,7 @@ fun WalletScreen() {
                                 ModernBalanceCard(
                                     title = "Earning Balance",
                                     amount = displayedEarningBalance,
-                                    bgColor = Color(0xFF0D47A1), // Blue
+                                    isEarning = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .aspectRatio(16f / 9f)
@@ -262,36 +256,23 @@ fun WalletScreen() {
                 ) {
                     Button(
                         onClick = { showDepositDialog = true },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.weight(1f).height(38.dp), // Thinner!
+                        shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E1E1E), contentColor = Color.White)
                     ) {
-                        Text("Deposit", fontWeight = FontWeight.Bold)
+                        Text("Deposit", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                     Button(
                         onClick = { showWithdrawDialog = true },
-                        modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3), contentColor = Color.White)
+                        modifier = Modifier.weight(1f).height(38.dp), // Thinner!
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D47A1), contentColor = Color.White)
                     ) {
-                        Text("Withdraw", fontWeight = FontWeight.Bold)
+                        Text("Withdraw", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
                 
-                Button(
-                    onClick = { showHistoryScreen = true },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                    border = BorderStroke(1.dp, Color.LightGray)
-                ) {
-                    Icon(Icons.Filled.History, contentDescription = "History")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("View History", fontWeight = FontWeight.SemiBold)
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             item {
@@ -311,10 +292,11 @@ fun WalletScreen() {
                         val isSelected = selectedEarningFilter == option
                         Card(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(64.dp)
-                                .clickable { selectedEarningFilter = option },
+                                        .fillMaxWidth()
+                                        .height(64.dp)
+                                        .clickable { selectedEarningFilter = option },
                             colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.5.dp, Color(0xFF0D47A1)), // Blue border around the components
                             shape = RoundedCornerShape(12.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
                         ) {
@@ -324,7 +306,7 @@ fun WalletScreen() {
                                         modifier = Modifier
                                             .fillMaxHeight()
                                             .width(6.dp)
-                                            .background(Color(0xFF2196F3))
+                                            .background(Color(0xFF0D47A1))
                                     )
                                 } else {
                                     Box(modifier = Modifier.fillMaxHeight().width(6.dp))
@@ -337,7 +319,7 @@ fun WalletScreen() {
                                 ) {
                                     Text(
                                         text = option,
-                                        color = if (isSelected) Color(0xFF2196F3) else Color.DarkGray,
+                                        color = if (isSelected) Color(0xFF0D47A1) else Color.DarkGray,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         style = MaterialTheme.typography.titleMedium
                                     )
@@ -353,36 +335,104 @@ fun WalletScreen() {
 }
 
 @Composable
-fun ModernBalanceCard(title: String, amount: Double, modifier: Modifier = Modifier, bgColor: Color) {
+fun ModernBalanceCard(title: String, amount: Double, modifier: Modifier = Modifier, isEarning: Boolean) {
+    val gradientBrush = if (isEarning) {
+        androidx.compose.ui.graphics.Brush.linearGradient(
+            colors = listOf(Color(0xFF021B79), Color(0xFF0575E6))
+        )
+    } else {
+        androidx.compose.ui.graphics.Brush.linearGradient(
+            colors = listOf(Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364))
+        )
+    }
+    
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(20.dp), // slightly rounded corners, large and modern
+        shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(bgColor)
-                .padding(24.dp),
-            contentAlignment = Alignment.CenterStart
+                .background(gradientBrush)
+                .padding(20.dp)
         ) {
+            // Shiny metallic microchip simulator
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .size(38.dp, 28.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            colors = listOf(Color(0xFFF9D423), Color(0xFFFF4E50))
+                        ),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+            )
+
+            // Stylized credit/wallet card branding
+            Text(
+                text = if (isEarning) "EARNINGS PREFERRED" else "DEPOSIT PREMIER",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 10.sp,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.TopEnd)
+            )
+
+            // Core card text layout
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.CenterStart)
+                    .padding(top = 16.dp)
             ) {
                 Text(
-                    text = title,
-                    color = Color.White.copy(alpha = 0.85f),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    text = title.uppercase(),
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 11.sp,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "৳${String.format("%.2f", amount)}",
                     color = Color.White,
                     style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.Bold
                 )
+            }
+
+            // Bottom row mimicking debit/credit cards
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "••••  ••••  ••••  ${if (isEarning) "9825" else "5012"}",
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    fontSize = 12.sp
+                )
+                
+                // Overlapping circles resembling credit card network issuer logos
+                Box(modifier = Modifier.width(36.dp).height(20.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(Color(0xFFFF5F00).copy(alpha = 0.85f), shape = RoundedCornerShape(100))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .size(20.dp)
+                            .background(Color(0xFFF79E1B).copy(alpha = 0.85f), shape = RoundedCornerShape(100))
+                    )
+                }
             }
         }
     }
