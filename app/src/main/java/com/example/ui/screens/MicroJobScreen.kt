@@ -98,21 +98,26 @@ fun MicroJobScreen(onBack: () -> Unit) {
     }
 
     Dialog(onDismissRequest = onBack, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        com.example.ui.screens.FullScreenDialogModifier()
+        com.example.ui.screens.FullScreenDialogModifier(
+            statusBarColor = android.graphics.Color.WHITE,
+            isLightStatusIcons = true
+        )
         Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
             Scaffold(
                 containerColor = Color.White,
                 topBar = {
-                    TopAppBar(
-                        title = { Text("Micro Jobs", color = Color.Black) },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black) }
-                        },
-                        actions = {
-                            IconButton(onClick = { showHistory = true }) { Icon(Icons.Filled.History, contentDescription = "History", tint = Color.Black) }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-                    )
+                    com.example.ui.screens.BeautifulHeader {
+                        TopAppBar(
+                            title = { Text("Micro Jobs", color = Color.Black, fontWeight = FontWeight.Bold) },
+                            navigationIcon = {
+                                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black) }
+                            },
+                            actions = {
+                                IconButton(onClick = { showHistory = true }) { Icon(Icons.Filled.History, contentDescription = "History", tint = Color.Black) }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                        )
+                    }
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) }
             ) { paddingValues ->

@@ -67,6 +67,9 @@ fun SpinScreen(onBack: () -> Unit) {
     val userId = auth.currentUser?.uid ?: ""
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
 
     var dailyLimit by remember { mutableIntStateOf(6) }
     var breakTimeMinutes by remember { mutableIntStateOf(5) }
@@ -136,15 +139,17 @@ fun SpinScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = Color.White,
         topBar = {
-            TopAppBar(
-                title = { Text("Lucky Spin", fontWeight = FontWeight.Bold, color = Color.Black) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Lucky Spin", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
         }
     ) { padding ->
         Column(

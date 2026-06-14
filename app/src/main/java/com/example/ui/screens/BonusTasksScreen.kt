@@ -37,6 +37,9 @@ fun BonusTasksScreen(onBack: () -> Unit) {
     val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
 
     // State
     var bonusBalance by remember { mutableStateOf(0.0) }
@@ -132,15 +135,17 @@ fun BonusTasksScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Bonus Dashboard", color = Color.Black) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Bonus Dashboard", color = Color.Black, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
         },
         containerColor = Color(0xFFF3F4F6)
     ) { padding ->

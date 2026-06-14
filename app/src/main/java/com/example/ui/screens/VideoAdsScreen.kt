@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import android.app.Activity
 import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +43,9 @@ fun VideoAdsScreen(onBack: () -> Unit) {
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
     val currentUserUid = UserSession.getUid(context)
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
 
     // Settings
     var rewardAd1 by remember { mutableStateOf(2.0) }
@@ -195,15 +199,17 @@ fun VideoAdsScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Video Ads") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            )
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Video Ads", color = Color.Black, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {

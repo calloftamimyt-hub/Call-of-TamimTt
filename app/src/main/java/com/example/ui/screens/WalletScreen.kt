@@ -24,6 +24,10 @@ import java.util.Calendar
 @Composable
 fun WalletScreen() {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
+
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -154,13 +158,12 @@ fun WalletScreen() {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("My Wallet", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("My Wallet", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
-            )
+            }
         }
     ) { paddingValues ->
         LazyColumn(

@@ -27,6 +27,10 @@ import java.util.*
 @Composable
 fun WalletHistoryScreen(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
+
     val walletHistoryDao = remember { AppDatabase.getDatabase(context).walletHistoryDao() }
     
     val allHistory by walletHistoryDao.getAllHistory().collectAsState(initial = emptyList())
@@ -43,18 +47,17 @@ fun WalletHistoryScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("History", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("History", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
-            )
+            }
         }
     ) { paddingValues ->
         Column(

@@ -44,6 +44,10 @@ fun WebTasksScreen(onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
 
     var executingTask by remember { mutableStateOf<WebTask?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
 
     LaunchedEffect(Unit) {
         db.collection("web_tasks").addSnapshotListener { snapshot, _ ->
@@ -67,15 +71,17 @@ fun WebTasksScreen(onBack: () -> Unit) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Web Tasks") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            )
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Web Tasks", color = Color.Black, fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
         }
     ) { padding ->
         if (isLoading) {

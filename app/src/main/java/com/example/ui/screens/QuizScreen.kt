@@ -344,7 +344,10 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
         onDismissRequest = onBack,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        com.example.ui.screens.FullScreenDialogModifier()
+        com.example.ui.screens.FullScreenDialogModifier(
+            statusBarColor = android.graphics.Color.WHITE,
+            isLightStatusIcons = true
+        )
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color.White
@@ -352,27 +355,29 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
             Scaffold(
                 containerColor = Color.White,
                 topBar = {
-                    TopAppBar(
-                        title = { Text(if (isEnglish) "Islamic Quiz" else "ইসলামিক কুইজ", color = Color.Black) },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { isEnglish = !isEnglish }) {
-                                Icon(
-                                    imageVector = if (isEnglish) Icons.Default.Language else Icons.Default.Translate,
-                                    contentDescription = "Toggle Language",
-                                    tint = Color.Black
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.White,
-                            titleContentColor = Color.Black
+                    com.example.ui.screens.BeautifulHeader {
+                        TopAppBar(
+                            title = { Text(if (isEnglish) "Islamic Quiz" else "ইসলামিক কুইজ", color = Color.Black, fontWeight = FontWeight.Bold) },
+                            navigationIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = { isEnglish = !isEnglish }) {
+                                    Icon(
+                                        imageVector = if (isEnglish) Icons.Default.Language else Icons.Default.Translate,
+                                        contentDescription = "Toggle Language",
+                                        tint = Color.Black
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent,
+                                titleContentColor = Color.White
+                            )
                         )
-                    )
+                    }
                 }
             ) { paddingValues ->
                 if (isLoadingSettings) {

@@ -57,35 +57,40 @@ fun NotificationScreen(onBack: () -> Unit) {
         onDismissRequest = onBack,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        com.example.ui.screens.FullScreenDialogModifier()
+        com.example.ui.screens.FullScreenDialogModifier(
+            statusBarColor = android.graphics.Color.WHITE,
+            isLightStatusIcons = true
+        )
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color.White
         ) {
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = { Text("Notifications", fontWeight = FontWeight.Bold) },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                            }
-                        },
-                        actions = {
-                            TextButton(onClick = {
-                                if (currentUserUid.isNotBlank()) {
-                                    com.example.LocalNotificationManager.markAllAsRead(context, currentUserUid)
-                                    triggerUpdate++
+                    com.example.ui.screens.BeautifulHeader {
+                        TopAppBar(
+                            title = { Text("Notifications", fontWeight = FontWeight.Bold, color = Color.Black) },
+                            navigationIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
                                 }
-                            }) {
-                                Text("Mark all read")
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            titleContentColor = MaterialTheme.colorScheme.onSurface
+                            },
+                            actions = {
+                                TextButton(onClick = {
+                                    if (currentUserUid.isNotBlank()) {
+                                        com.example.LocalNotificationManager.markAllAsRead(context, currentUserUid)
+                                        triggerUpdate++
+                                    }
+                                }) {
+                                    Text("Mark all read", color = Color.Black)
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent,
+                                titleContentColor = Color.Black
+                            )
                         )
-                    )
+                    }
                 }
             ) { paddingValues ->
                 if (isLoading) {

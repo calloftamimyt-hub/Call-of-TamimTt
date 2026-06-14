@@ -32,12 +32,16 @@ data class ReferralUser(
 @Composable
 fun ReferralHistoryScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
+
     val db = FirebaseFirestore.getInstance()
     val userId = UserSession.getUid(context)
     
     var referralList by remember { mutableStateOf<List<ReferralUser>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-
+ 
     LaunchedEffect(userId) {
         if (userId.isNotEmpty()) {
             try {
@@ -76,18 +80,17 @@ fun ReferralHistoryScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = Color(0xFFF7F9FC),
         topBar = {
-            TopAppBar(
-                title = { Text("Referral History", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Referral History", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
-            )
+            }
         }
     ) { padding ->
         if (isLoading) {

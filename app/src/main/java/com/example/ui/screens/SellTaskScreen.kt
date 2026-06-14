@@ -193,7 +193,10 @@ fun SellTaskScreen(task: EarningTask, onBack: () -> Unit) {
         onDismissRequest = onBack,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        com.example.ui.screens.FullScreenDialogModifier()
+        com.example.ui.screens.FullScreenDialogModifier(
+            statusBarColor = android.graphics.Color.WHITE,
+            isLightStatusIcons = true
+        )
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = Color.White
@@ -201,161 +204,221 @@ fun SellTaskScreen(task: EarningTask, onBack: () -> Unit) {
             Scaffold(
                 containerColor = Color.White,
                 topBar = {
-                    TopAppBar(
-                        title = { Text(task.title, color = Color.Black) },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { showRules = true }) {
-                                Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.Black)
-                            }
-                            IconButton(onClick = { showHistory = true }) {
-                                Icon(Icons.Filled.History, contentDescription = "History", tint = Color.Black)
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.White,
-                            titleContentColor = Color.Black
+                    com.example.ui.screens.BeautifulHeader {
+                        TopAppBar(
+                            title = { Text(task.title, color = Color.Black, fontWeight = FontWeight.Bold) },
+                            navigationIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = { showRules = true }) {
+                                    Icon(Icons.Filled.Info, contentDescription = "Info", tint = Color.Black)
+                                }
+                                IconButton(onClick = { showHistory = true }) {
+                                    Icon(Icons.Filled.History, contentDescription = "History", tint = Color.Black)
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent,
+                                titleContentColor = Color.Black
+                            )
                         )
-                    )
+                    }
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) }
             ) { paddingValues ->
-                LazyColumn(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .background(Color.White)
                 ) {
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
-
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    // 1. Anchored Top Section ("উপরের অংশটুকু আটকানো থাকবে")
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Reward Per Sell", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text("৳$rewardPerSell", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text("Daily Limit", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text("$dailyLimit", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Reward Per Sell", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("৳$rewardPerSell", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Daily Limit", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("$dailyLimit", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
 
-                    // Form section
-                    item {
-                        Text(
-                            "Submit Account Data",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        when {
-                            task.title.contains("Gmail") -> {
-                                OutlinedTextField(
-                                    value = accountInput,
-                                    onValueChange = { accountInput = it },
-                                    label = { Text("Gmail Address") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                OutlinedTextField(
-                                    value = currentPasswordInput,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Required Password (Copy to use)") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                            }
-                            task.title.contains("Facebook") -> {
-                                OutlinedTextField(
-                                    value = profileLinkInput,
-                                    onValueChange = { profileLinkInput = it },
-                                    label = { Text("Profile Link") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                OutlinedTextField(
-                                    value = accountInput,
-                                    onValueChange = { accountInput = it },
-                                    label = { Text("Username / Email / Number") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                OutlinedTextField(
-                                    value = currentPasswordInput,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Required Password (Copy to use)") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                            }
-                            task.title.contains("Instagram") -> {
-                                OutlinedTextField(
-                                    value = accountInput,
-                                    onValueChange = { accountInput = it },
-                                    label = { Text("Email / Phone Number") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                OutlinedTextField(
-                                    value = currentPasswordInput,
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    label = { Text("Required Password (Copy to use)") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                            }
-                            task.title.contains("WhatsApp") || task.title.contains("Telegram") -> {
-                                OutlinedTextField(
-                                    value = phoneNumberInput,
-                                    onValueChange = { phoneNumberInput = it },
-                                    label = { Text("Phone Number") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
-                            }
-                            else -> {
-                                OutlinedTextField(
-                                    value = accountInput,
-                                    onValueChange = { accountInput = it },
-                                    label = { Text("Account Identifier") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color.White, focusedContainerColor = Color.White)
-                                )
+                    // 2. Scrollable Middle Area ("মাঝখানের কার্ড টা হবে আমার মূল কার্ড। কার্ড টি ভাসমান দেখাবে।")
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp) // raised / floating elevation as requested
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        "Submit Account Data",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    when {
+                                        task.title.contains("Gmail") -> {
+                                            OutlinedTextField(
+                                                value = accountInput,
+                                                onValueChange = { accountInput = it },
+                                                label = { Text("Gmail Address") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            OutlinedTextField(
+                                                value = currentPasswordInput,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Required Password (Copy to use)") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                        }
+                                        task.title.contains("Facebook") -> {
+                                            OutlinedTextField(
+                                                value = profileLinkInput,
+                                                onValueChange = { profileLinkInput = it },
+                                                label = { Text("Profile Link") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            OutlinedTextField(
+                                                value = accountInput,
+                                                onValueChange = { accountInput = it },
+                                                label = { Text("Username / Email / Number") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            OutlinedTextField(
+                                                value = currentPasswordInput,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Required Password (Copy to use)") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                        }
+                                        task.title.contains("Instagram") -> {
+                                            OutlinedTextField(
+                                                value = accountInput,
+                                                onValueChange = { accountInput = it },
+                                                label = { Text("Email / Phone Number") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            OutlinedTextField(
+                                                value = currentPasswordInput,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Required Password (Copy to use)") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                        }
+                                        task.title.contains("WhatsApp") || task.title.contains("Telegram") -> {
+                                            OutlinedTextField(
+                                                value = phoneNumberInput,
+                                                onValueChange = { phoneNumberInput = it },
+                                                label = { Text("Phone Number") },
+                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                        }
+                                        else -> {
+                                            OutlinedTextField(
+                                                value = accountInput,
+                                                onValueChange = { accountInput = it },
+                                                label = { Text("Account Identifier") },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    unfocusedContainerColor = Color.White,
+                                                    focusedContainerColor = Color.White
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
+                    }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                    // 3. Anchored Bottom Section ("নিচের অংশটুকু আটকানো থাকবে। নিচের অংশটুকু ডাবানো দেখাবে।")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(16.dp)
+                    ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
@@ -371,8 +434,8 @@ fun SellTaskScreen(task: EarningTask, onBack: () -> Unit) {
                                 color = Color.Gray
                             )
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         val isFormValid = when {
                             task.title.contains("Gmail") -> accountInput.isNotBlank()
                             task.title.contains("Facebook") -> profileLinkInput.isNotBlank() && accountInput.isNotBlank()
@@ -457,7 +520,6 @@ fun SellTaskScreen(task: EarningTask, onBack: () -> Unit) {
                         ) {
                             Text("Submit Account", style = MaterialTheme.typography.titleMedium)
                         }
-                        Spacer(modifier = Modifier.height(32.dp))
                     }
                 }
             }

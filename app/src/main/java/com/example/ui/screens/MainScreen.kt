@@ -697,7 +697,10 @@ fun ProfileScreen(onLogout: () -> Unit) {
             onDismissRequest = { showEditProfile = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
-            com.example.ui.screens.FullScreenDialogModifier()
+            com.example.ui.screens.FullScreenDialogModifier(
+                statusBarColor = android.graphics.Color.WHITE,
+                isLightStatusIcons = true
+            )
             androidx.compose.material3.Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = androidx.compose.ui.graphics.Color.White
@@ -709,20 +712,23 @@ fun ProfileScreen(onLogout: () -> Unit) {
 
                 Scaffold(
                     topBar = {
-                        androidx.compose.material3.TopAppBar(
-                            title = { Text("এডিট প্রোফাইল", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
-                            navigationIcon = {
-                                androidx.compose.material3.IconButton(onClick = { showEditProfile = false }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back"
-                                    )
-                                }
-                            },
-                            colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
-                                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface
+                        com.example.ui.screens.BeautifulHeader {
+                            androidx.compose.material3.TopAppBar(
+                                title = { Text("এডিট প্রোফাইল", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = androidx.compose.ui.graphics.Color.Black) },
+                                navigationIcon = {
+                                    androidx.compose.material3.IconButton(onClick = { showEditProfile = false }) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Back",
+                                            tint = androidx.compose.ui.graphics.Color.Black
+                                        )
+                                    }
+                                },
+                                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent
+                                )
                             )
-                        )
+                        }
                     }
                 ) { padValues ->
                     androidx.compose.foundation.layout.Column(
@@ -839,7 +845,10 @@ fun ProfileScreen(onLogout: () -> Unit) {
             onDismissRequest = { showDailyCheckInFullScreen = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
-            com.example.ui.screens.FullScreenDialogModifier()
+            com.example.ui.screens.FullScreenDialogModifier(
+                statusBarColor = android.graphics.Color.WHITE,
+                isLightStatusIcons = true
+            )
             androidx.compose.material3.Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = androidx.compose.ui.graphics.Color.White
@@ -854,7 +863,10 @@ fun ProfileScreen(onLogout: () -> Unit) {
             onDismissRequest = { showReferEarnFullScreen = false },
             properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
-            com.example.ui.screens.FullScreenDialogModifier()
+            com.example.ui.screens.FullScreenDialogModifier(
+                statusBarColor = android.graphics.Color.WHITE,
+                isLightStatusIcons = true
+            )
             androidx.compose.material3.Surface(
                 modifier = Modifier.fillMaxSize(),
                 color = androidx.compose.ui.graphics.Color.White

@@ -95,26 +95,31 @@ fun ReferAndEarnScreen(onBack: () -> Unit) {
         }
     }
 
+    com.example.ui.screens.WhiteStatusBarFix()
+
     Scaffold(
         containerColor = Color.White,
         topBar = {
-            TopAppBar(
-                title = { Text("Refer & Earn", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showHistoryScreen = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.History,
-                            contentDescription = "Referral History"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Refer & Earn", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showHistoryScreen = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.History,
+                                contentDescription = "Referral History",
+                                tint = Color.Black
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                )
+            }
         }
     ) { padding ->
         if (!isEnabled) {

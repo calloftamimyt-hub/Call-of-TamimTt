@@ -47,6 +47,11 @@ data class AppTool(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToolsScreen(onBack: (() -> Unit)? = null) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
+
     var selectedTool by remember { mutableStateOf<AppTool?>(null) }
     
     val toolsList = listOf(
@@ -94,20 +99,21 @@ fun ToolsScreen(onBack: (() -> Unit)? = null) {
         } else {
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = { Text("Utility Tools", fontWeight = FontWeight.Bold, fontSize = 22.sp) },
-                        navigationIcon = {
-                            if (onBack != null) {
-                                IconButton(onClick = onBack) {
-                                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    BeautifulHeader {
+                        TopAppBar(
+                            title = { Text("Utility Tools", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black) },
+                            navigationIcon = {
+                                if (onBack != null) {
+                                    IconButton(onClick = onBack) {
+                                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                                    }
                                 }
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            titleContentColor = MaterialTheme.colorScheme.primary
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent
+                            )
                         )
-                    )
+                    }
                 }
             ) { paddingValues ->
                 LazyColumn(

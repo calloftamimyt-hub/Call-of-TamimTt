@@ -30,6 +30,9 @@ import kotlinx.coroutines.launch
 fun TypingJobScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
+    val view = androidx.compose.ui.platform.LocalView.current
+
+    com.example.ui.screens.WhiteStatusBarFix()
     
     var generatedText by remember { mutableStateOf(generateRandomString(8)) }
     var userInput by remember { mutableStateOf("") }
@@ -121,18 +124,20 @@ fun TypingJobScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = Color.White,
         topBar = {
-            TopAppBar(
-                title = { Text("Typing Job", fontWeight = FontWeight.Bold, color = Color.Black) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+            com.example.ui.screens.BeautifulHeader {
+                TopAppBar(
+                    title = { Text("Typing Job", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = Color.Black
+                    )
                 )
-            )
+            }
         }
     ) { paddingValues ->
         if (isLoadingSettings) {
