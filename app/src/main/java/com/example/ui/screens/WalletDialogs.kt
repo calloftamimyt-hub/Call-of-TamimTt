@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -323,7 +324,7 @@ fun DepositDialog(onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit) 
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    // 6. Submit Button (with requested slightly rounded corners)
+                    // 6. Submit Button (with requested slightly rounded corners, thick and slightly raised)
                     if (isSubmitting) {
                         Box(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = darkBlue)
@@ -368,9 +369,12 @@ fun DepositDialog(onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit) 
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
-                                .padding(bottom = 24.dp),
-                            shape = RoundedCornerShape(12.dp), // Slightly rounded corner as requested
+                                .height(58.dp),
+                            shape = RoundedCornerShape(14.dp), // Thicker and slightly rounded corners
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 6.dp,
+                                pressedElevation = 12.dp
+                            ),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = darkBlue,
                                 disabledContainerColor = darkBlue.copy(alpha = 0.5f)
@@ -379,6 +383,24 @@ fun DepositDialog(onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit) 
                         ) {
                             Text("Submit Deposit Request", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(58.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(2.dp, darkBlue),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = darkBlue
+                            )
+                        ) {
+                            Text("Go Back / Close", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }
@@ -687,7 +709,7 @@ fun WithdrawDialog(availableBalance: Double, onDismiss: () -> Unit, onSubmitted:
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    // Submit button (with requested slightly rounded corners)
+                    // Submit button
                     if (isSubmitting) {
                         Box(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = darkBlue)
@@ -750,9 +772,12 @@ fun WithdrawDialog(availableBalance: Double, onDismiss: () -> Unit, onSubmitted:
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
-                                .padding(bottom = 24.dp),
-                            shape = RoundedCornerShape(12.dp),
+                                .height(58.dp),
+                            shape = RoundedCornerShape(14.dp), // Thicker and slightly rounded corners
+                            elevation = ButtonDefaults.buttonElevation(
+                                defaultElevation = 6.dp,
+                                pressedElevation = 12.dp
+                            ),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = darkBlue,
                                 disabledContainerColor = darkBlue.copy(alpha = 0.5f)
@@ -761,6 +786,24 @@ fun WithdrawDialog(availableBalance: Double, onDismiss: () -> Unit, onSubmitted:
                         ) {
                             Text("Confirm Withdraw", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(58.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(2.dp, darkBlue),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = darkBlue
+                            )
+                        ) {
+                            Text("Go Back / Close", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }

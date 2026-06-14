@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -80,6 +82,7 @@ fun WalletScreen() {
 
     // Earnings Filter State
     var selectedEarningFilter by remember { mutableStateOf("Lifetime Income") }
+    val cardPagerState = rememberPagerState(pageCount = { 2 })
     var displayedEarningBalance by remember { mutableStateOf(0.0) }
 
     LaunchedEffect(selectedEarningFilter, balance) {
@@ -161,6 +164,16 @@ fun WalletScreen() {
             com.example.ui.screens.BeautifulHeader {
                 TopAppBar(
                     title = { Text("My Wallet", fontWeight = FontWeight.Bold, color = Color.Black) },
+                    actions = {
+                        IconButton(onClick = { showHistoryScreen = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.History,
+                                contentDescription = "View History",
+                                tint = Color.Black,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
@@ -176,25 +189,66 @@ fun WalletScreen() {
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 if (isLoadingUser) {
-                    Box(modifier = Modifier.fillMaxWidth().height(140.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 } else {
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        ModernBalanceCard(
-                            title = "Deposit Balance",
-                            amount = rechargeBalance + deposited,
-                            modifier = Modifier.weight(1f),
-                            bgColor = Color(0xFF1E1E1E) // Black
-                        )
-                        ModernBalanceCard(
-                            title = "Earning Balance",
-                            amount = displayedEarningBalance,
-                            modifier = Modifier.weight(1f),
-                            bgColor = Color(0xFF2196F3) // Blue
+                        HorizontalPager(
+                            state = cardPagerState,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            if (page == 0) {
+                                ModernBalanceCard(
+                                    title = "Deposit Balance",
+                                    amount = rechargeBalance + deposited,
+                                    bgColor = Color(0xFF1E1E1E), // Black
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(16f / 9f)
+                                )
+                            } else {
+                                ModernBalanceCard(
+                                    title = "Earning Balance",
+                                    amount = displayedEarningBalance,
+                                    bgColor = Color(0xFF0D47A1), // Blue
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(16f / 9f)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Pager dots indicators
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(2) { index ->
+                                val isSelected = cardPagerState.currentPage == index
+                                Box(
+                                    modifier = Modifier
+                                        .size(if (isSelected) 10.dp else 7.dp)
+                                        .background(
+                                            color = if (isSelected) Color(0xFF0D47A1) else Color.LightGray,
+                                            shape = RoundedCornerShape(100)
+                                        )
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = if (cardPagerState.currentPage == 0) "Swipe to see Earning Balance →" else "← Swipe to see Deposit Balance",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -301,30 +355,33 @@ fun WalletScreen() {
 @Composable
 fun ModernBalanceCard(title: String, amount: Double, modifier: Modifier = Modifier, bgColor: Color) {
     Card(
-        modifier = modifier.height(120.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp), // slightly rounded corners, large and modern
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgColor)
-                .padding(16.dp),
+                .padding(24.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = title,
-                    color = Color.White.copy(alpha = 0.8f),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "৳${String.format("%.2f", amount)}",
                     color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.ExtraBold
                 )
             }
         }
