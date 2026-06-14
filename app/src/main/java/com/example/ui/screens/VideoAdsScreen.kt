@@ -35,6 +35,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+data class VideoAd(
+    val id: Int = 0,
+    val label: String = "",
+    val reward_amount: Double = 0.0,
+    val break_duration: Int = 0, // seconds
+    val ad_unit_id: String = ""
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoAdsScreen(onBack: () -> Unit) {
@@ -43,64 +51,72 @@ fun VideoAdsScreen(onBack: () -> Unit) {
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
     val currentUserUid = UserSession.getUid(context)
-    val view = androidx.compose.ui.platform.LocalView.current
-
+    
     com.example.ui.screens.WhiteStatusBarFix()
 
-    // Settings
-    var rewardAd1 by remember { mutableStateOf(2.0) }
-    var rewardAd2 by remember { mutableStateOf(3.0) }
-    var rewardAd3 by remember { mutableStateOf(1.0) }
-    var adsLoading by remember { mutableStateOf(false) }
+    // Dynamic settings from Firestore
+    var isEnabled by remember { mutableStateOf(true) }
+    var dailyLimit by remember { mutableStateOf(10) }
+    var videoAdsList by remember { mutableStateOf(listOf<VideoAd>()) }
 
-    // Last watched timestamps
-    val prefs = context.getSharedPreferences("video_ads_prefs_$currentUserUid", Context.MODE_PRIVATE)
-    var lastWatched1 by remember { mutableStateOf(prefs.getLong("last_watched_1", 0L)) }
-    var lastWatched2 by remember { mutableStateOf(prefs.getLong("last_watched_2", 0L)) }
-    var lastWatched3 by remember { mutableStateOf(prefs.getLong("last_watched_3", 0L)) }
-
-    // Time calculations
-    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    // User's daily count and last ad reset date
+    var userDailyCount by remember { mutableStateOf(0) }
+    var lastResetDate by remember { mutableStateOf("") }
+    
+    // Cooldown management
+    val prefs = context.getSharedPreferences("VideoAdCooldowns_$currentUserUid", Context.MODE_PRIVATE)
+    var currentTime by remember { mutableStateOf(System.currentTimeMillis() / 1000) }
+    
+    // Refresh current time every second
     LaunchedEffect(Unit) {
         while (true) {
-            currentTime = System.currentTimeMillis()
+            currentTime = System.currentTimeMillis() / 1000
             delay(1000)
         }
     }
 
+    // Sync settings from Firestore
     LaunchedEffect(Unit) {
         db.collection("settings").document("video_ad_settings")
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, e ->
                 if (snapshot != null && snapshot.exists()) {
-                    rewardAd1 = snapshot.getDouble("reward_ad1") ?: snapshot.getDouble("rewardAmount") ?: 2.0
-                    rewardAd2 = snapshot.getDouble("reward_ad2") ?: snapshot.getDouble("rewardAmount") ?: 3.0
-                    rewardAd3 = snapshot.getDouble("reward_ad3") ?: snapshot.getDouble("rewardAmount") ?: 1.0
+                    isEnabled = snapshot.getBoolean("is_enabled") ?: true
+                    dailyLimit = (snapshot.getLong("daily_limit") ?: 10).toInt()
+                    
+                    val adsArray = snapshot.get("ads") as? List<Map<String, Any>>
+                    val mappedAds = ArrayList<VideoAd>()
+                    adsArray?.forEach { map ->
+                        mappedAds.add(VideoAd(
+                            id = (map["id"] as? Long ?: 0).toInt(),
+                            label = map["label"] as? String ?: "Video Ad",
+                            reward_amount = (map["reward_amount"] as? Number)?.toDouble() ?: 0.0,
+                            break_duration = (map["break_duration"] as? Long ?: 60).toInt(),
+                            ad_unit_id = map["ad_unit_id"] as? String ?: "ca-app-pub-3940256099942544/5224354917" // Test ID
+                        ))
+                    }
+                    videoAdsList = mappedAds
                 }
             }
+            
+        if (currentUserUid.isNotEmpty()) {
+            db.collection("users").document(currentUserUid)
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null && snapshot.exists()) {
+                        userDailyCount = (snapshot.getLong("daily_ad_count") ?: 0).toInt()
+                        lastResetDate = snapshot.getString("last_ad_reset_date") ?: ""
+                        
+                        // Check if we need to reset daily count
+                        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+                        if (lastResetDate != today) {
+                            db.collection("users").document(currentUserUid)
+                                .update("daily_ad_count", 0, "last_ad_reset_date", today)
+                        }
+                    }
+                }
+        }
     }
 
-    // Rules
-    val ad1Cooldown = 30 * 60 * 1000L // 30 mins
-    val ad2Cooldown = 30 * 60 * 1000L
-    val ad3Cooldown = 30 * 60 * 1000L
-    val ad2BreakFromAd1 = 31 * 1000L
-    val ad3BreakFromAd2 = 90 * 1000L // 1 min 30 sec
-
-    // Availability checks
-    val ad1NextTime = lastWatched1 + ad1Cooldown
-    val ad1Available = currentTime >= ad1NextTime
-
-    val ad2NextTimeBasedOnAd2 = lastWatched2 + ad2Cooldown
-    val ad2NextTimeBasedOnAd1 = lastWatched1 + ad2BreakFromAd1
-    val ad2NextTime = maxOf(ad2NextTimeBasedOnAd2, ad2NextTimeBasedOnAd1)
-    val ad2Available = currentTime >= ad2NextTime
-
-    val ad3NextTimeBasedOnAd3 = lastWatched3 + ad3Cooldown
-    val ad3NextTimeBasedOnAd2 = lastWatched2 + ad3BreakFromAd2
-    val ad3NextTime = maxOf(ad3NextTimeBasedOnAd3, ad3NextTimeBasedOnAd2)
-    val ad3Available = currentTime >= ad3NextTime
-
-    // Dialog state
+    var adsLoading by remember { mutableStateOf(false) }
     var snackbarMessage by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -111,14 +127,7 @@ fun VideoAdsScreen(onBack: () -> Unit) {
         }
     }
 
-    fun handleReward(rewardAmount: Double, adNumber: Int) {
-        val now = System.currentTimeMillis()
-        when (adNumber) {
-            1 -> { lastWatched1 = now; prefs.edit().putLong("last_watched_1", now).apply() }
-            2 -> { lastWatched2 = now; prefs.edit().putLong("last_watched_2", now).apply() }
-            3 -> { lastWatched3 = now; prefs.edit().putLong("last_watched_3", now).apply() }
-        }
-
+    fun creditUserWallet(rewardAmount: Double) {
         scope.launch {
             try {
                 if (currentUserUid.isNotEmpty()) {
@@ -127,155 +136,169 @@ fun VideoAdsScreen(onBack: () -> Unit) {
                         val snapshot = transaction.get(userRef)
                         val bal = snapshot.getDouble("balance") ?: 0.0
                         val totalEarned = snapshot.getDouble("totalEarned") ?: 0.0
+                        val count = snapshot.getLong("daily_ad_count") ?: 0
+                        
                         transaction.update(userRef, "balance", bal + rewardAmount)
                         transaction.update(userRef, "totalEarned", totalEarned + rewardAmount)
-                        transaction.update(userRef, "lastAdCategoryTaskTime", System.currentTimeMillis())
+                        transaction.update(userRef, "daily_ad_count", count + 1)
                     }.await()
                     com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, rewardAmount)
                     snackbarMessage = "Congratulations! You earned ৳$rewardAmount"
                 }
             } catch (e: Exception) {
-                snackbarMessage = "Error claiming reward"
+                snackbarMessage = "Error updating wallet"
             }
         }
     }
 
-    fun loadAndShowRewardedAd() {
+    fun playRewardedAd(videoAd: VideoAd) {
         if (activity == null) return
+        
+        // 1. Check Daily Limit
+        if (userDailyCount >= dailyLimit) {
+            snackbarMessage = "You have reached your daily ad limit of $dailyLimit!"
+            return
+        }
+
+        // 2. Check Global Cooldown (1 minute between ANY ad)
+        val lastAnyWatchTime = prefs.getLong("last_any_ad_watch_time", 0L)
+        val globalSecondsPassed = currentTime - lastAnyWatchTime
+        if (globalSecondsPassed < 60) {
+            val globalRemain = 60 - globalSecondsPassed
+            snackbarMessage = "Please wait $globalRemain seconds for the next ad!"
+            return
+        }
+
+        // 3. Check Per-Ad Cooldown
+        val lastWatchTime = prefs.getLong("last_watch_time_ad_${videoAd.id}", 0L)
+        val secondsPassed = currentTime - lastWatchTime
+        if (secondsPassed < videoAd.break_duration) {
+            val remain = videoAd.break_duration - secondsPassed
+            snackbarMessage = "Please wait $remain seconds for this specific ad!"
+            return
+        }
+
         adsLoading = true
         snackbarMessage = "Loading Ad..."
         val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(context, "ca-app-pub-4288324218526190/8832383188", adRequest, object : RewardedAdLoadCallback() {
+        
+        RewardedAd.load(context, videoAd.ad_unit_id, adRequest, object : RewardedAdLoadCallback() {
             override fun onAdLoaded(ad: RewardedAd) {
                 adsLoading = false
                 ad.show(activity) { _ ->
-                    handleReward(rewardAd1, 1)
+                    // Update Cooldowns
+                    prefs.edit()
+                        .putLong("last_watch_time_ad_${videoAd.id}", currentTime)
+                        .putLong("last_any_ad_watch_time", currentTime)
+                        .apply()
+                    // Credit Wallet
+                    creditUserWallet(videoAd.reward_amount)
                 }
             }
             override fun onAdFailedToLoad(error: LoadAdError) {
                 adsLoading = false
-                snackbarMessage = "Ad failed to load. Try again later."
-            }
-        })
-    }
-
-    fun loadAndShowRewardedInterstitialAd() {
-        if (activity == null) return
-        adsLoading = true
-        snackbarMessage = "Loading Ad..."
-        val adRequest = AdRequest.Builder().build()
-        RewardedInterstitialAd.load(context, "ca-app-pub-4288324218526190/9504595744", adRequest, object : RewardedInterstitialAdLoadCallback() {
-            override fun onAdLoaded(ad: RewardedInterstitialAd) {
-                adsLoading = false
-                ad.show(activity) { _ ->
-                    handleReward(rewardAd2, 2)
-                }
-            }
-            override fun onAdFailedToLoad(error: LoadAdError) {
-                adsLoading = false
-                snackbarMessage = "Ad failed to load. Try again later."
-            }
-        })
-    }
-
-    fun loadAndShowInterstitialAd() {
-        if (activity == null) return
-        adsLoading = true
-        snackbarMessage = "Loading Ad..."
-        val adRequest = AdRequest.Builder().build()
-        InterstitialAd.load(context, "ca-app-pub-4288324218526190/1290229653", adRequest, object : InterstitialAdLoadCallback() {
-            override fun onAdLoaded(ad: InterstitialAd) {
-                adsLoading = false
-                ad.show(activity)
-                // App-level reward point since AdMob doesn't handle callback points for Interstitial
-                handleReward(rewardAd3, 3) 
-            }
-            override fun onAdFailedToLoad(error: LoadAdError) {
-                adsLoading = false
-                snackbarMessage = "Ad failed to load. Try again later."
+                snackbarMessage = "Ad failed to load. Please try again."
             }
         })
     }
 
     Scaffold(
         topBar = {
-            com.example.ui.screens.BeautifulHeader {
-                TopAppBar(
-                    title = { Text("Video Ads", color = Color.Black, fontWeight = FontWeight.Bold) },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.Black)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                )
-            }
+            TopAppBar(
+                title = { Text("Video Ads", color = Color.Black, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.Black)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            AndroidView(
-                modifier = Modifier.fillMaxWidth(),
-                factory = { ctx ->
-                    AdView(ctx).apply {
-                        setAdSize(AdSize.BANNER)
-                        adUnitId = "ca-app-pub-4288324218526190/9060448049"
-                        loadAd(AdRequest.Builder().build())
+        containerColor = Color(0xFFF5F5F5)
+    ) { padding ->
+        if (!isEnabled) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Video Ads are currently disabled by Admin.", fontWeight = FontWeight.Bold)
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Info Card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Daily Goal", fontWeight = FontWeight.Bold, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            LinearProgressIndicator(
+                                progress = { if (dailyLimit > 0) userDailyCount.toFloat() / dailyLimit else 0f },
+                                modifier = Modifier.weight(1f).height(8.dp),
+                                color = Color(0xFF4CAF50),
+                                trackColor = Color(0xFFE8F5E9),
+                                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("$userDailyCount/$dailyLimit", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            VideoAdCard(
-                title = "Rewarded Ad",
-                bonus = rewardAd1,
-                isAvailable = ad1Available,
-                nextTimeStr = formatTimeLeft(ad1NextTime - currentTime),
-                isLoading = adsLoading,
-                onClick = { loadAndShowRewardedAd() }
-            )
-            
-            VideoAdCard(
-                title = "Rewarded Interstitial Ad",
-                bonus = rewardAd2,
-                isAvailable = ad2Available,
-                nextTimeStr = formatTimeLeft(ad2NextTime - currentTime),
-                isLoading = adsLoading,
-                onClick = { loadAndShowRewardedInterstitialAd() }
-            )
-            
-            VideoAdCard(
-                title = "Interstitial Ad",
-                bonus = rewardAd3,
-                isAvailable = ad3Available,
-                nextTimeStr = formatTimeLeft(ad3NextTime - currentTime),
-                isLoading = adsLoading,
-                onClick = { loadAndShowInterstitialAd() }
-            )
+
+                // Video Ad Cards
+                val lastAnyWatchTime = prefs.getLong("last_any_ad_watch_time", 0L)
+                val globalSecondsPassed = currentTime - lastAnyWatchTime
+                val isGlobalAvailable = globalSecondsPassed >= 60
+                val globalRemain = if (isGlobalAvailable) 0 else (60 - globalSecondsPassed).toInt()
+
+                videoAdsList.forEach { videoAd ->
+                    val lastWatchTime = prefs.getLong("last_watch_time_ad_${videoAd.id}", 0L)
+                    val secondsPassed = currentTime - lastWatchTime
+                    val isPerAdAvailable = secondsPassed >= videoAd.break_duration
+                    
+                    val isOverallAvailable = isGlobalAvailable && isPerAdAvailable
+                    val effectiveRemain = if (isOverallAvailable) 0 else maxOf(globalRemain, if (isPerAdAvailable) 0 else (videoAd.break_duration - secondsPassed).toInt())
+
+                    VideoAdCard(
+                        videoAd = videoAd,
+                        isAvailable = isOverallAvailable,
+                        remainingSeconds = effectiveRemain,
+                        isLoading = adsLoading,
+                        onClick = { playRewardedAd(videoAd) }
+                    )
+                }
+                
+                if (videoAdsList.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(top = 32.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color.Black)
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
 fun VideoAdCard(
-    title: String,
-    bonus: Double,
+    videoAd: VideoAd,
     isAvailable: Boolean,
-    nextTimeStr: String,
+    remainingSeconds: Int,
     isLoading: Boolean,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -286,28 +309,47 @@ fun VideoAdCard(
             Icon(
                 imageVector = Icons.Filled.PlayCircleFilled,
                 contentDescription = "Video",
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
+                modifier = Modifier.size(48.dp),
+                tint = if (isAvailable) Color(0xFFE91E63) else Color.Gray
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = videoAd.label,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Bonus: ৳$bonus", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "Reward: ৳${videoAd.reward_amount}",
+                    color = Color(0xFF4CAF50),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = androidx.compose.ui.unit.TextUnit.Unspecified
+                )
                 if (!isAvailable) {
-                    Text("Available in: $nextTimeStr", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = "Wait: ${remainingSeconds}s",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Red
+                    )
                 }
             }
             Button(
                 onClick = onClick,
                 enabled = isAvailable && !isLoading,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isAvailable) Color(0xFF1E1E1E) else Color.LightGray,
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
             ) {
-                Text("Start")
+                Text("Start", fontWeight = FontWeight.Bold)
             }
         }
     }
 }
+
 
 fun formatTimeLeft(millis: Long): String {
     if (millis <= 0) return "0s"

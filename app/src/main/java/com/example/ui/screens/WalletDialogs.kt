@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -395,7 +397,7 @@ fun DepositDialog(onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit) 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WithdrawScreen(availableBalance: Double, onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit) {
+fun WithdrawScreen(availableBalance: Double, onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit, onViewHistory: () -> Unit = {}) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var amount by remember { mutableStateOf("") }
     var accountNo by remember { mutableStateOf("") }
@@ -458,6 +460,11 @@ fun WithdrawScreen(availableBalance: Double, onDismiss: () -> Unit, onSubmitted:
                 navigationIcon = {
                     IconButton(onClick = onDismiss, enabled = !isSubmitting) {
                         Icon(Icons.Filled.Close, contentDescription = "Close", tint = darkBlue)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onViewHistory) {
+                        Icon(Icons.Filled.History, contentDescription = "History", tint = darkBlue)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)

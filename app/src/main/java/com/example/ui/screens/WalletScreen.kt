@@ -10,11 +10,14 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -156,6 +159,10 @@ fun WalletScreen() {
                     )
                     snackbarHostState.showSnackbar("Withdrawal request of ৳$amount via $method submitted!")
                 }
+            },
+            onViewHistory = {
+                showWithdrawDialog = false
+                showHistoryScreen = true
             }
         )
         return
@@ -167,7 +174,16 @@ fun WalletScreen() {
             com.example.ui.screens.BeautifulHeader {
                 TopAppBar(
                     title = { Text("My Wallet", fontWeight = FontWeight.Bold, color = Color.Black) },
-                    actions = {}, // History icon disappeared!
+                    actions = {
+                        IconButton(onClick = { showHistoryScreen = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.History,
+                                contentDescription = "View History",
+                                tint = Color.Black,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
@@ -244,36 +260,37 @@ fun WalletScreen() {
                             color = Color.Gray,
                             fontWeight = FontWeight.Medium
                         )
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Buttons moved to the bottom of the card section
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Button(
+                                onClick = { showDepositDialog = true },
+                                modifier = Modifier.weight(1f).height(40.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E1E1E), contentColor = Color.White)
+                            ) {
+                                Text("Deposit", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                            Button(
+                                onClick = { showWithdrawDialog = true },
+                                modifier = Modifier.weight(1f).height(40.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D47A1), contentColor = Color.White)
+                            ) {
+                                Text("Withdraw", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Button(
-                        onClick = { showDepositDialog = true },
-                        modifier = Modifier.weight(1f).height(38.dp), // Thinner!
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E1E1E), contentColor = Color.White)
-                    ) {
-                        Text("Deposit", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    }
-                    Button(
-                        onClick = { showWithdrawDialog = true },
-                        modifier = Modifier.weight(1f).height(38.dp), // Thinner!
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D47A1), contentColor = Color.White)
-                    ) {
-                        Text("Withdraw", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            // (Previous Row of buttons removed here)
 
             item {
                 Text(
@@ -285,43 +302,65 @@ fun WalletScreen() {
                 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     val filterOptions = listOf("Today's Income", "Last 7 Days Income", "Last 30 Days Income", "Lifetime Income")
                     filterOptions.forEach { option ->
                         val isSelected = selectedEarningFilter == option
                         Card(
                             modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(64.dp)
-                                        .clickable { selectedEarningFilter = option },
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .shadow(
+                                    elevation = if (isSelected) 10.dp else 1.dp,
+                                    shape = RoundedCornerShape(12.dp),
+                                    spotColor = if (isSelected) Color(0xFF0D47A1) else Color.Black,
+                                    ambientColor = if (isSelected) Color(0xFF0D47A1) else Color.Black
+                                )
+                                .clickable { selectedEarningFilter = option },
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            border = BorderStroke(1.5.dp, Color(0xFF0D47A1)), // Blue border around the components
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
+                            border = if (isSelected) BorderStroke(1.5.dp, Color(0xFF0D47A1)) else BorderStroke(0.5.dp, Color.LightGray),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Row(modifier = Modifier.fillMaxSize()) {
-                                if (isSelected) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxHeight()
-                                            .width(6.dp)
-                                            .background(Color(0xFF0D47A1))
-                                    )
-                                } else {
-                                    Box(modifier = Modifier.fillMaxHeight().width(6.dp))
-                                }
+                            Row(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Wallet Icon on the left
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 16.dp),
-                                    contentAlignment = Alignment.CenterStart
+                                        .size(36.dp)
+                                        .background(
+                                            color = if (isSelected) Color(0xFF0D47A1).copy(alpha = 0.1f) else Color.Gray.copy(alpha = 0.05f),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = option,
-                                        color = if (isSelected) Color(0xFF0D47A1) else Color.DarkGray,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        style = MaterialTheme.typography.titleMedium
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = if (isSelected) Color(0xFF0D47A1) else Color.Gray,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.width(16.dp))
+                                
+                                Text(
+                                    text = option,
+                                    color = if (isSelected) Color(0xFF0D47A1) else Color.DarkGray,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    fontSize = 15.sp
+                                )
+                                
+                                Spacer(modifier = Modifier.weight(1f))
+                                
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0D47A1),
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
