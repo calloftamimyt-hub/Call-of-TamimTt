@@ -14,7 +14,7 @@ service cloud.firestore {
 
     // 1. App Settings & Config (Read-only for users, updated by Admins from Firebase Console)
     match /settings/{settingDoc} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if false; 
     }
     match /banners/{bannerId} {
@@ -24,11 +24,21 @@ service cloud.firestore {
 
     // 2. User Profiles
     match /users/{userId} {
-      // General read access is required so features like "Referral List" 
-      // or "Referral Code lookup" can find other user names.
-      allow read: if isAuthenticated();
-      // ONLY the owner can update their own user data
-      allow write: if isOwner(userId);
+      // Allow read without auth because the login screen searches 
+      // by mobile number BEFORE the user is authenticated in Firebase Auth.
+      // Also needed for Refer and Earn to look up referrers.
+      allow read: if true;
+      
+      // ONLY the owner can create their own user document
+      allow create: if isOwner(userId);
+      
+      // ONLY the owner can freely update their own user data.
+      // We also allow other authenticated users to ONLY update the 'balance' field
+      // (needed for adding referral bonuses).
+      allow update: if isOwner(userId) || 
+                   (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']));
+                   
+      allow delete: if false;
     }
     
     // 3. Transactions & Requests (High Security - Strictly User Tied)

@@ -27,17 +27,23 @@ import androidx.compose.ui.unit.dp
 fun AuthScreen(onLoginSuccess: () -> Unit) {
     var isLogin by remember { mutableStateOf(true) }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        if (isLogin) {
-            LoginScreen(
-                onNavigateToSignUp = { isLogin = false },
-                onLoginSuccess = onLoginSuccess
-            )
-        } else {
-            SignUpScreen(
-                onNavigateToLogin = { isLogin = true },
-                onSignUpSuccess = onLoginSuccess
-            )
+    val blueColorScheme = MaterialTheme.colorScheme.copy(
+        primary = androidx.compose.ui.graphics.Color(0xFF2196F3)
+    )
+
+    MaterialTheme(colorScheme = blueColorScheme) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            if (isLogin) {
+                LoginScreen(
+                    onNavigateToSignUp = { isLogin = false },
+                    onLoginSuccess = onLoginSuccess
+                )
+            } else {
+                SignUpScreen(
+                    onNavigateToLogin = { isLogin = true },
+                    onSignUpSuccess = onLoginSuccess
+                )
+            }
         }
     }
 }
