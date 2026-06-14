@@ -2,114 +2,142 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Admin check helper function
-    function isAdmin() {
-      return true;
+    // Check if the user is authenticated via Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Settings Collection Rules
+    // Check if the authenticated user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. App Settings & Config (Read-only for users, updated by Admins from Firebase Console)
     match /settings/{settingDoc} {
-      allow read, write: if true; 
+      allow read: if isAuthenticated();
+      allow write: if false; 
+    }
+    match /banners/{bannerId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
 
-    // Users Collection Rules
+    // 2. User Profiles
     match /users/{userId} {
-      allow read, write: if true;
+      // General read access is required so features like "Referral List" 
+      // or "Referral Code lookup" can find other user names.
+      allow read: if isAuthenticated();
+      // ONLY the owner can update their own user data
+      allow write: if isOwner(userId);
     }
     
-    // Notifications Collection Rules
-    match /notifications/{notificationId} {
-      allow read, write: if true;
-    }
-
-    // Withdrawals (Cashout) Collection Rules
+    // 3. Transactions & Requests (High Security - Strictly User Tied)
     match /withdrawals/{requestId} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Prevent client apps from changing pending withdrawals
     }
 
-    // Deposits Collection Rules
     match /deposits/{depositId} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    // Social & General Requests Integration
+    match /recharge_requests/{id} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 4. External Account Service Integrations
     match /gmail_requests/{id} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
     match /facebook_requests/{id} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
     match /instagram_requests/{id} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
     match /whatsapp_requests/{id} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
     match /telegram_requests/{id} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    // Mobile Recharge Requests Rules
-    match /recharge_requests/{id} {
-      allow read, write: if true;
-    }
-    
-    // Drive Offers Collection Rules
-    match /drive_offers/{offerId} {
-       allow read, write: if true;
-    }
-
-    // Drive Orders Collection Rules
-    match /drive_orders/{orderId} {
-      allow read, write: if true;
-    }
-    
-    // Task Posts / Submissions Collection Rules
+    // 5. Tasks, Jobs, Submissions
     match /task_posts/{taskId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
     match /tasks/{taskId} {
-      allow read, write: if true;
-    }
-    match /jobs/{jobId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
     match /job_posts/{jobId} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated(); // All auth users can read available jobs
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
     match /submissions/{submissionId} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can see their own submissions
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
-    match /history/{historyId} {
-      allow read, write: if true;
-    }
-
-    // Balance Tracking
-    match /balance/{userId} {
-      allow read, write: if true;
-    }
-
-    // Micro Jobs Configuration
     match /micro_jobs/{jobId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
     match /micro_job_submissions/{submissionId} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    // Core transaction and ledger logs
+    // 6. Drive Packages
+    match /drive_offers/{offerId} {
+       allow read: if isAuthenticated();
+       allow write: if false;
+    }
+    match /drive_orders/{orderId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // 7. General logs/notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // For system generation logs
+      allow update, delete: if false;
+    }
+    match /history/{historyId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
     match /transactions/{transactionId} {
-      allow read, write: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    // Banner graphics
-    match /banners/{bannerId} {
-      allow read, write: if true;
-    }
-
-    // Secure fallback: Allow all reads and writes
+    // 8. Secure Default Fallback
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
