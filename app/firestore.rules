@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Admin check helper function
+    function isAdmin() {
+      return true;
+    }
+
+    // Settings Collection Rules
+    match /settings/{settingDoc} {
+      allow read, write: if true; 
+    }
+
+    // Users Collection Rules
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    // Notifications Collection Rules
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // Withdrawals (Cashout) Collection Rules
+    match /withdrawals/{requestId} {
+      allow read, write: if true;
+    }
+
+    // Deposits Collection Rules
+    match /deposits/{depositId} {
+      allow read, write: if true;
+    }
+
+    // Social & General Requests Integration
+    match /gmail_requests/{id} {
+      allow read, write: if true;
+    }
+    match /facebook_requests/{id} {
+      allow read, write: if true;
+    }
+    match /instagram_requests/{id} {
+      allow read, write: if true;
+    }
+    match /whatsapp_requests/{id} {
+      allow read, write: if true;
+    }
+    match /telegram_requests/{id} {
+      allow read, write: if true;
+    }
+
+    // Mobile Recharge Requests Rules
+    match /recharge_requests/{id} {
+      allow read, write: if true;
+    }
+    
+    // Drive Offers Collection Rules
+    match /drive_offers/{offerId} {
+       allow read, write: if true;
+    }
+
+    // Drive Orders Collection Rules
+    match /drive_orders/{orderId} {
+      allow read, write: if true;
+    }
+    
+    // Task Posts / Submissions Collection Rules
+    match /task_posts/{taskId} {
+      allow read, write: if true;
+    }
+    match /tasks/{taskId} {
+      allow read, write: if true;
+    }
+    match /jobs/{jobId} {
+      allow read, write: if true;
+    }
+    match /job_posts/{jobId} {
+      allow read, write: if true;
+    }
+    match /submissions/{submissionId} {
+      allow read, write: if true;
+    }
+    match /history/{historyId} {
+      allow read, write: if true;
+    }
+
+    // Balance Tracking
+    match /balance/{userId} {
+      allow read, write: if true;
+    }
+
+    // Micro Jobs Configuration
+    match /micro_jobs/{jobId} {
+      allow read, write: if true;
+    }
+    match /micro_job_submissions/{submissionId} {
+      allow read, write: if true;
+    }
+
+    // Core transaction and ledger logs
+    match /transactions/{transactionId} {
+      allow read, write: if true;
+    }
+
+    // Banner graphics
+    match /banners/{bannerId} {
+      allow read, write: if true;
+    }
+
+    // Secure fallback: Allow all reads and writes
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

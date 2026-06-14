@@ -1,0 +1,6 @@
+{
+  "name": "CircleBiz",
+  "description": "Secure micro jobs, ad viewing and mobile recharge application.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

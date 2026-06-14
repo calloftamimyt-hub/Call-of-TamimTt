@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Outlined Stylized 'C' Circle (Open on the top-right) -->
+    <path
+        android:pathData="M 88,32 A 42,42 0 1 0 88,88"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="10"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- 3 Vertical Growing Bars inside -->
+    <path
+        android:pathData="M 40,74 L 40,62"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:strokeLineCap="round" />
+
+    <path
+        android:pathData="M 52,74 L 52,50"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:strokeLineCap="round" />
+
+    <path
+        android:pathData="M 64,74 L 64,38"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:strokeLineCap="round" />
+
+    <!-- Upward Swooping Arrow stem -->
+    <path
+        android:pathData="M 40,78 Q 62,76 86,44"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="8"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- Arrow head pointing top-right - clean and symmetric -->
+    <path
+        android:pathData="M 96,32 L 76,36 L 84,44 L 92,52 Z"
+        android:fillColor="#FFFFFF" />
+
+</vector>

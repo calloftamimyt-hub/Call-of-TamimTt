@@ -1,0 +1,12 @@
+{
+  "name": "recharge-api",
+  "version": "1.0.0",
+  "description": "Node.js Backend API for Mobile Recharge App",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
