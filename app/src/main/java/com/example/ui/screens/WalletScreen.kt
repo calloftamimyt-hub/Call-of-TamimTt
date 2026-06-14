@@ -1,11 +1,10 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -13,11 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.data.local.AppDatabase
 import com.example.data.local.WalletHistoryEntity
 import kotlinx.coroutines.launch
@@ -51,7 +48,7 @@ fun WalletScreen() {
             val listenerReg = com.google.firebase.firestore.FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserUid)
-                .addSnapshotListener { snapshot, error ->
+                .addSnapshotListener { snapshot, _ ->
                     if (snapshot != null && snapshot.exists()) {
                         balance = when (val value = snapshot.get("balance")) {
                             is Number -> value.toDouble()
@@ -159,11 +156,6 @@ fun WalletScreen() {
         topBar = {
             TopAppBar(
                 title = { Text("My Wallet", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = { showHistoryScreen = true }) {
-                        Icon(Icons.Filled.History, contentDescription = "History")
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
@@ -193,13 +185,13 @@ fun WalletScreen() {
                             title = "Deposit Balance",
                             amount = rechargeBalance + deposited,
                             modifier = Modifier.weight(1f),
-                            bgGradient = Brush.linearGradient(listOf(Color(0xFF2b5876), Color(0xFF4e4376)))
+                            bgColor = Color(0xFF1E1E1E) // Black
                         )
                         ModernBalanceCard(
                             title = "Earning Balance",
                             amount = displayedEarningBalance,
                             modifier = Modifier.weight(1f),
-                            bgGradient = Brush.linearGradient(listOf(Color(0xFF0ba360), Color(0xFF3cba92)))
+                            bgColor = Color(0xFF2196F3) // Blue
                         )
                     }
                 }
@@ -213,20 +205,35 @@ fun WalletScreen() {
                 ) {
                     Button(
                         onClick = { showDepositDialog = true },
-                        modifier = Modifier.weight(1f).height(50.dp),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E1E1E), contentColor = Color.White)
                     ) {
                         Text("Deposit", fontWeight = FontWeight.Bold)
                     }
                     Button(
                         onClick = { showWithdrawDialog = true },
-                        modifier = Modifier.weight(1f).height(50.dp),
+                        modifier = Modifier.weight(1f).height(52.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3), contentColor = Color.White)
                     ) {
                         Text("Withdraw", fontWeight = FontWeight.Bold)
                     }
                 }
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Button(
+                    onClick = { showHistoryScreen = true },
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                    border = BorderStroke(1.dp, Color.LightGray)
+                ) {
+                    Icon(Icons.Filled.History, contentDescription = "History")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("View History", fontWeight = FontWeight.SemiBold)
+                }
+                
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
@@ -236,21 +243,50 @@ fun WalletScreen() {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
-                val filterOptions = listOf("Today's Income", "Last 7 Days Income", "Last 30 Days Income", "Lifetime Income")
-                androidx.compose.foundation.lazy.LazyRow(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(filterOptions.size) { index ->
-                        val option = filterOptions[index]
-                        FilterChip(
-                            selected = selectedEarningFilter == option,
-                            onClick = { selectedEarningFilter = option },
-                            label = { Text(option) },
-                            shape = RoundedCornerShape(16.dp)
-                        )
+                    val filterOptions = listOf("Today's Income", "Last 7 Days Income", "Last 30 Days Income", "Lifetime Income")
+                    filterOptions.forEach { option ->
+                        val isSelected = selectedEarningFilter == option
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .clickable { selectedEarningFilter = option },
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
+                        ) {
+                            Row(modifier = Modifier.fillMaxSize()) {
+                                if (isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .width(6.dp)
+                                            .background(Color(0xFF2196F3))
+                                    )
+                                } else {
+                                    Box(modifier = Modifier.fillMaxHeight().width(6.dp))
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 16.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Text(
+                                        text = option,
+                                        color = if (isSelected) Color(0xFF2196F3) else Color.DarkGray,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
@@ -260,7 +296,7 @@ fun WalletScreen() {
 }
 
 @Composable
-fun ModernBalanceCard(title: String, amount: Double, modifier: Modifier = Modifier, bgGradient: Brush) {
+fun ModernBalanceCard(title: String, amount: Double, modifier: Modifier = Modifier, bgColor: Color) {
     Card(
         modifier = modifier.height(120.dp),
         shape = RoundedCornerShape(16.dp),
@@ -269,7 +305,7 @@ fun ModernBalanceCard(title: String, amount: Double, modifier: Modifier = Modifi
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(bgGradient)
+                .background(bgColor)
                 .padding(16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
