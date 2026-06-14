@@ -109,6 +109,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.ReportProblem
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Phone
@@ -287,8 +291,12 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
     }
     
     val tasks = mutableListOf(
-        EarningTask("Mobile Recharge", Icons.Filled.PhoneAndroid, Color(0xFF4CAF50)),
-        EarningTask("Drive Offer", Icons.Filled.LocalOffer, Color(0xFF2196F3)),
+        EarningTask("Video Ads", Icons.Filled.PlayCircle, Color(0xFF8E24AA)),
+        EarningTask("Article Ads", Icons.Filled.List, Color(0xFF009688)),
+        EarningTask("Web Tasks", Icons.Filled.Search, Color(0xFF3F51B5)),
+        EarningTask("App Offers", Icons.Filled.CheckCircle, Color(0xFFFF5722)),
+        EarningTask("Download Tasks", Icons.Filled.ArrowDropDown, Color(0xFF4CAF50)),
+        EarningTask("Survey Ads", Icons.Filled.Star, Color(0xFF00BCD4)),
         EarningTask("Reselling", Icons.Filled.ShoppingBag, Color(0xFFFF9800)),
         EarningTask("Blood", Icons.Filled.AddCircle, Color(0xFFF44336)),
         EarningTask("Micro Job", Icons.Filled.WorkHistory, Color(0xFFE91E63)),
@@ -752,14 +760,10 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
     }
 
     if (selectedTask != null) {
-        if (selectedTask!!.title == "Mobile Recharge") {
-            MobileRechargeScreen(onBack = { selectedTask = null })
+        if (selectedTask!!.title == "Video Ads" || selectedTask!!.title == "Article Ads" || selectedTask!!.title == "Web Tasks" || selectedTask!!.title == "App Offers" || selectedTask!!.title == "Download Tasks" || selectedTask!!.title == "Survey Ads" || selectedTask!!.title == "Ad View") {
+            com.example.ui.screens.AdViewScreen(task = selectedTask!!, onBack = { selectedTask = null })
         } else if (selectedTask!!.title == "Quiz Job") {
             com.example.ui.screens.QuizScreen(onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Ad View") {
-            com.example.ui.screens.AdViewScreen(task = selectedTask!!, onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Drive Offer") {
-            com.example.ui.screens.DriveOfferScreen(onBack = { selectedTask = null })
         } else if (selectedTask!!.title == "Job Posts") {
             com.example.ui.screens.JobPostScreen(onBack = { selectedTask = null })
         } else if (selectedTask!!.title == "Micro Job") {
