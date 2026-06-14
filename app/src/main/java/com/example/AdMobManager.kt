@@ -131,6 +131,58 @@ object AdMobManager {
         }
     }
 
+    private var bonusRewardedAd: RewardedAd? = null
+
+    fun loadBonusRewardedAd(context: Context) {
+        if (bonusRewardedAd != null) return
+
+        val adRequest = AdRequest.Builder().build()
+        RewardedAd.load(
+            context,
+            "ca-app-pub-4288324218526190/1290229653",
+            adRequest,
+            object : RewardedAdLoadCallback() {
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Log.d("AdMob", "Bonus Ad failed to load: ${adError.message}")
+                    bonusRewardedAd = null
+                }
+
+                override fun onAdLoaded(ad: RewardedAd) {
+                    Log.d("AdMob", "Bonus Ad was loaded.")
+                    bonusRewardedAd = ad
+                }
+            })
+    }
+
+    fun showBonusRewardedAd(activity: Activity, onRewardEarned: () -> Unit, onAdDismissed: () -> Unit) {
+        if (bonusRewardedAd != null) {
+            var rewardEarned = false
+            bonusRewardedAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    bonusRewardedAd = null
+                    loadBonusRewardedAd(activity)
+                    if (rewardEarned) {
+                        onRewardEarned()
+                    } else {
+                        onAdDismissed()
+                    }
+                }
+
+                override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+                    bonusRewardedAd = null
+                    onAdDismissed()
+                }
+            }
+
+            bonusRewardedAd?.show(activity) {
+                rewardEarned = true
+            }
+        } else {
+            Log.d("AdMob", "Bonus ad wasn't ready yet.")
+            onRewardEarned() // Let them in anyway if not loaded yet
+        }
+    }
+
     fun loadInterstitialAd(context: Context) {
         if (interstitialAd != null) return
         val adRequest = AdRequest.Builder().build()

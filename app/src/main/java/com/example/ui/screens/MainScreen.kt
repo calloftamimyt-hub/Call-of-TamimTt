@@ -569,6 +569,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
 
     LaunchedEffect(Unit) {
         AdMobManager.loadRewardedAd(context)
+        AdMobManager.loadBonusRewardedAd(context)
     }
 
     fun handleAdReward() {

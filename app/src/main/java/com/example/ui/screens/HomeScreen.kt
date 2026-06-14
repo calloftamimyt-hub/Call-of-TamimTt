@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import android.app.Activity
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -140,7 +142,8 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
     var selectedTask by remember { mutableStateOf<EarningTask?>(null) }
     var showNotifications by remember { mutableStateOf(false) }
     var showWatchTimeScreen by remember { mutableStateOf(false) }
-    
+    var showBonusAdPending by remember { mutableStateOf(false) }
+
     var unreadNotificationsCount by remember { mutableStateOf(0) }
     
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -700,7 +703,13 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
                 ) {
                     rowTasks.forEach { task ->
                         Box(modifier = Modifier.weight(1f)) {
-                            EarningTaskItem(task, onClick = { selectedTask = task })
+                            EarningTaskItem(task, onClick = {
+                                if (task.title == "Bonus Tasks") {
+                                    showBonusAdPending = true
+                                } else {
+                                    selectedTask = task
+                                }
+                            })
                         }
                     }
                     // Fill empty spaces in the last row if needed
@@ -761,6 +770,29 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
         return
     }
 
+    if (showBonusAdPending) {
+        val activity = context as? Activity
+        if (activity != null) {
+            var earned = false
+            LaunchedEffect(Unit) {
+                com.example.AdMobManager.showBonusRewardedAd(
+                    activity,
+                    onRewardEarned = { earned = true },
+                    onAdDismissed = {
+                        showBonusAdPending = false
+                        if (earned) {
+                            selectedTask = tasks.find { it.title == "Bonus Tasks" }
+                        } else {
+                            Toast.makeText(context, "Bonus Task requires watching the full ad.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
+        } else {
+            showBonusAdPending = false
+        }
+    }
+
     if (showWatchTimeScreen) {
         WatchTimeScreen(onBack = { showWatchTimeScreen = false })
     }
@@ -785,7 +817,9 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
                 com.example.ui.screens.WebTasksScreen(onBack = { selectedTask = null })
             } else if (selectedTask!!.title == "Video Ads") {
                 com.example.ui.screens.VideoAdsScreen(onBack = { selectedTask = null })
-            } else if (selectedTask!!.title == "Article Ads" || selectedTask!!.title == "Bonus Tasks" || selectedTask!!.title == "Ad View") {
+            } else if (selectedTask!!.title == "Bonus Tasks") {
+                com.example.ui.screens.BonusTasksScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Article Ads" || selectedTask!!.title == "Ad View") {
                 com.example.ui.screens.AdViewScreen(task = selectedTask!!, onBack = { selectedTask = null })
             } else if (selectedTask!!.title.contains("Quiz")) {
                 com.example.ui.screens.QuizScreen(onBack = { selectedTask = null })
