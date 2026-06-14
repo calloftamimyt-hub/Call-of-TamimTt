@@ -161,6 +161,7 @@ fun AdViewScreen(task: EarningTask, onBack: () -> Unit) {
                             tx.update(uDocRef, "balance", currentBalance + rewardAmount)
                             tx.update(uDocRef, "earnings", currentEarnings + rewardAmount)
                             tx.update(uDocRef, "lastAdWatchTime", System.currentTimeMillis())
+                            tx.update(uDocRef, "lastAdCategoryTaskTime", System.currentTimeMillis())
                             
                             val nDoc = db.collection("notifications").document()
                             val notifyData = hashMapOf(

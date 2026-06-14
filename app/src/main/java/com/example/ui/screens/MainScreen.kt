@@ -40,11 +40,16 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.filled.CardGiftcard
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.Wallet
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.filled.Handyman
+import androidx.compose.material.icons.outlined.Handyman
+import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.outlined.Store
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -96,14 +101,14 @@ val bottomNavItems = listOf(
     ),
     BottomNavItem(
         title = "Tools",
-        selectedIcon = Icons.Filled.Widgets,
-        unselectedIcon = Icons.Outlined.Widgets,
+        selectedIcon = Icons.Filled.Handyman,
+        unselectedIcon = Icons.Outlined.Handyman,
         route = "tools"
     ),
     BottomNavItem(
         title = "Shop",
-        selectedIcon = Icons.Filled.ShoppingCart,
-        unselectedIcon = Icons.Outlined.ShoppingCart,
+        selectedIcon = Icons.Filled.Store,
+        unselectedIcon = Icons.Outlined.Store,
         route = "shop"
     ),
     BottomNavItem(

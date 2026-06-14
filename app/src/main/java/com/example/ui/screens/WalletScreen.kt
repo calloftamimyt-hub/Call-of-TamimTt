@@ -579,8 +579,8 @@ fun DepositDialog(onDismiss: () -> Unit, onSubmitted: (Double, String) -> Unit) 
     var transactionId by remember { mutableStateOf("") }
     var selectedMethod by remember { mutableStateOf("bKash") }
     val methods = listOf("bKash", "Nagad", "Rocket", "Bank Transfer")
-    var selectedDepositTarget by remember { mutableStateOf("Recharge") }
-    val depositTargets = listOf("Recharge" to "For Mobile Recharge", "General" to "For General Jobs/Tasks")
+    var selectedDepositTarget by remember { mutableStateOf("General") }
+    val depositTargets = listOf("General" to "For General Jobs/Tasks")
     
     val depositSuggestions = listOf("100", "200", "500", "1000", "2000", "5000")
     val context = androidx.compose.ui.platform.LocalContext.current

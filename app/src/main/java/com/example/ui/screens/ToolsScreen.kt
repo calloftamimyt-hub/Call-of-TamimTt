@@ -46,7 +46,7 @@ data class AppTool(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ToolsScreen() {
+fun ToolsScreen(onBack: (() -> Unit)? = null) {
     var selectedTool by remember { mutableStateOf<AppTool?>(null) }
     
     val toolsList = listOf(
@@ -96,6 +96,13 @@ fun ToolsScreen() {
                 topBar = {
                     TopAppBar(
                         title = { Text("Utility Tools", fontWeight = FontWeight.Bold, fontSize = 22.sp) },
+                        navigationIcon = {
+                            if (onBack != null) {
+                                IconButton(onClick = onBack) {
+                                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                                }
+                            }
+                        },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             titleContentColor = MaterialTheme.colorScheme.primary

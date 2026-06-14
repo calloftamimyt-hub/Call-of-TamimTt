@@ -314,6 +314,7 @@ fun TypingJobScreen(onBack: () -> Unit) {
                                         tx.update(uDocRef, "balance", currentBalance + rewardAmount)
                                         tx.update(uDocRef, "earnings", currentEarnings + rewardAmount)
                                         tx.update(uDocRef, "lastTypingTime", System.currentTimeMillis())
+                                        tx.update(uDocRef, "lastAdCategoryTaskTime", System.currentTimeMillis())
                                         
                                         val nDoc = db.collection("notifications").document()
                                         val notifyData = hashMapOf(

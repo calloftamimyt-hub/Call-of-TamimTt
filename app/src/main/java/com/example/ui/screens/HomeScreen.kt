@@ -35,6 +35,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Email
@@ -168,6 +169,16 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
     var userBalance by remember { mutableStateOf(0.0) }
     var userReferralCode by remember { mutableStateOf("") }
     var userAvatar by remember { mutableStateOf("") }
+    var lastAdCategoryTaskTime by remember { mutableStateOf(0L) }
+    var globalAdCooldownMinutes by remember { mutableStateOf(5) }
+    var currentTime by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while(true) {
+            currentTime = System.currentTimeMillis()
+            delay(1000)
+        }
+    }
     
     var showTerms by remember { mutableStateOf(false) }
     var showPrivacy by remember { mutableStateOf(false) }
@@ -189,6 +200,7 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
                         userBalance = snapshot.getDouble("balance") ?: 0.0
                         userReferralCode = snapshot.getString("myReferralCode") ?: snapshot.getString("referralCode") ?: ""
                         userAvatar = snapshot.getString("avatar") ?: snapshot.getString("profile_image") ?: ""
+                        lastAdCategoryTaskTime = snapshot.getLong("lastAdCategoryTaskTime") ?: 0L
                     }
                 }
             
@@ -281,11 +293,19 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
                     }
                 }
                 
+            val cooldownSettingsListener = db.collection("settings").document("ad_cooldown_settings")
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null && snapshot.exists()) {
+                        globalAdCooldownMinutes = snapshot.getLong("minutes")?.toInt() ?: 5
+                    }
+                }
+                
             onDispose {
                 userListener.remove()
                 bannerListener.remove()
                 checkInListener.remove()
                 checkInListener2.remove()
+                cooldownSettingsListener.remove()
             }
         }
     }
@@ -294,9 +314,8 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
         EarningTask("Video Ads", Icons.Filled.PlayCircle, Color(0xFF8E24AA)),
         EarningTask("Article Ads", Icons.Filled.List, Color(0xFF009688)),
         EarningTask("Web Tasks", Icons.Filled.Search, Color(0xFF3F51B5)),
-        EarningTask("App Offers", Icons.Filled.CheckCircle, Color(0xFFFF5722)),
         EarningTask("Download Tasks", Icons.Filled.ArrowDropDown, Color(0xFF4CAF50)),
-        EarningTask("Survey Ads", Icons.Filled.Star, Color(0xFF00BCD4)),
+        EarningTask("Bonus Tasks", Icons.Filled.Star, Color(0xFFFF9800)),
         EarningTask("Reselling", Icons.Filled.ShoppingBag, Color(0xFFFF9800)),
         EarningTask("Blood", Icons.Filled.AddCircle, Color(0xFFF44336)),
         EarningTask("Micro Job", Icons.Filled.WorkHistory, Color(0xFFE91E63)),
@@ -307,6 +326,8 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
         EarningTask("Telegram Sell", Icons.Filled.Send, Color(0xFF0088CC), imageUrl = "https://res.cloudinary.com/dhlzcea1t/image/upload/v1781151136/krywirdhsugqrhebejmx.png"),
         EarningTask("Job Posts", Icons.Filled.PostAdd, Color(0xFFFF5722)),
         EarningTask("Quiz Job", Icons.Filled.QuestionMark, Color(0xFFFFC107)),
+        EarningTask("Bengali Quiz", Icons.Filled.QuestionMark, Color(0xFFE91E63)),
+        EarningTask("English Quiz", Icons.Filled.QuestionMark, Color(0xFF3F51B5)),
         EarningTask("Typing Job", Icons.Filled.Keyboard, Color(0xFF9C27B0)),
         EarningTask("Ad View", Icons.Filled.PlayCircle, Color(0xFF673AB7))
     )
@@ -673,21 +694,6 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             val rows = visibleTasks.chunked(4)
             rows.forEachIndexed { index, rowTasks ->
-                if (index == 2) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    AsyncImage(
-                        model = "https://res.cloudinary.com/dhlzcea1t/image/upload/v1781163018/qyucgdznzdxinnij6qlt.png",
-                        contentDescription = "Offer Banner",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f/9f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { showWatchTimeScreen = true },
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -760,29 +766,49 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
     }
 
     if (selectedTask != null) {
-        if (selectedTask!!.title == "Video Ads" || selectedTask!!.title == "Article Ads" || selectedTask!!.title == "Web Tasks" || selectedTask!!.title == "App Offers" || selectedTask!!.title == "Download Tasks" || selectedTask!!.title == "Survey Ads" || selectedTask!!.title == "Ad View") {
-            com.example.ui.screens.AdViewScreen(task = selectedTask!!, onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Quiz Job") {
-            com.example.ui.screens.QuizScreen(onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Job Posts") {
-            com.example.ui.screens.JobPostScreen(onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Micro Job") {
-            com.example.ui.screens.MicroJobScreen(onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Daily Spin") {
-            com.example.ui.screens.SpinScreen(onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Scratch Card") {
-            com.example.ui.screens.ScratchCardScreen(onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Reselling" || selectedTask!!.title == "Blood") {
-            ComingSoonBottomSheet(task = selectedTask!!, onDismiss = { selectedTask = null })
-        } else if (selectedTask!!.title.contains("Sell")) {
-            com.example.ui.screens.SellTaskScreen(task = selectedTask!!, onBack = { selectedTask = null })
-        } else if (selectedTask!!.title == "Typing Job") {
-            com.example.ui.screens.TypingJobScreen(onBack = { selectedTask = null })
-        } else {
-            TaskVerificationBottomSheet(
-                task = selectedTask!!,
+        val adBasedCategories = listOf("Video Ads", "Ad View", "Typing Job", "Quiz Job", "Bangla Quiz", "Bengali Quiz", "English Quiz", "Google Quiz")
+        val isAdCategory = selectedTask!!.title in adBasedCategories
+        val cooldownMillis = globalAdCooldownMinutes * 60 * 1000L
+        val timeSinceLastAdTask = currentTime - lastAdCategoryTaskTime
+        
+        if (isAdCategory && timeSinceLastAdTask < cooldownMillis) {
+            val remainingMillis = cooldownMillis - timeSinceLastAdTask
+            AdCategoryCooldownBottomSheet(
+                remainingMillis = remainingMillis,
+                cooldownMinutes = globalAdCooldownMinutes,
                 onDismiss = { selectedTask = null }
             )
+        } else {
+            if (selectedTask!!.title == "Tools") {
+                com.example.ui.screens.ToolsScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Web Tasks") {
+                com.example.ui.screens.WebTasksScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Video Ads") {
+                com.example.ui.screens.VideoAdsScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Article Ads" || selectedTask!!.title == "Bonus Tasks" || selectedTask!!.title == "Ad View") {
+                com.example.ui.screens.AdViewScreen(task = selectedTask!!, onBack = { selectedTask = null })
+            } else if (selectedTask!!.title.contains("Quiz")) {
+                com.example.ui.screens.QuizScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Job Posts") {
+                com.example.ui.screens.JobPostScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Micro Job") {
+                com.example.ui.screens.MicroJobScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Daily Spin") {
+                com.example.ui.screens.SpinScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Scratch Card") {
+                com.example.ui.screens.ScratchCardScreen(onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Reselling" || selectedTask!!.title == "Blood" || selectedTask!!.title == "Download Tasks") {
+                ComingSoonBottomSheet(task = selectedTask!!, onDismiss = { selectedTask = null })
+            } else if (selectedTask!!.title.contains("Sell")) {
+                com.example.ui.screens.SellTaskScreen(task = selectedTask!!, onBack = { selectedTask = null })
+            } else if (selectedTask!!.title == "Typing Job") {
+                com.example.ui.screens.TypingJobScreen(onBack = { selectedTask = null })
+            } else {
+                TaskVerificationBottomSheet(
+                    task = selectedTask!!,
+                    onDismiss = { selectedTask = null }
+                )
+            }
         }
     }
     
@@ -835,6 +861,81 @@ fun EarningTaskItem(task: EarningTask, onClick: () -> Unit) {
             fontSize = 11.sp,
             modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp)
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdCategoryCooldownBottomSheet(remainingMillis: Long, cooldownMinutes: Int, onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ReportProblem,
+                contentDescription = "Cooldown",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Account Safety Break",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "আপনি একটি কাজ সম্পন্ন করেছেন। পরবর্তী Ad-Based Task শুরু করার আগে অনুগ্রহ করে $cooldownMinutes মিনিট অপেক্ষা করুন।\n\nAccount Safety এবং Fair Usage নিশ্চিত করতে কিছুক্ষণ বিরতি নিন।",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            val secondsLeft = (remainingMillis / 1000) % 60
+            val minutesLeft = (remainingMillis / (1000 * 60)) % 60
+            val timeString = String.format("%02d:%02d", minutesLeft, secondsLeft)
+            
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "পরবর্তী Task শুরু করতে বাকি:",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = timeString,
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text("Understood")
+            }
+        }
     }
 }
 
