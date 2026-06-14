@@ -65,12 +65,12 @@ fun VideoAdsScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        db.collection("settings").document("video_ads_settings")
+        db.collection("settings").document("video_ad_settings")
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null && snapshot.exists()) {
-                    rewardAd1 = snapshot.getDouble("reward_ad1") ?: 2.0
-                    rewardAd2 = snapshot.getDouble("reward_ad2") ?: 3.0
-                    rewardAd3 = snapshot.getDouble("reward_ad3") ?: 1.0
+                    rewardAd1 = snapshot.getDouble("reward_ad1") ?: snapshot.getDouble("rewardAmount") ?: 2.0
+                    rewardAd2 = snapshot.getDouble("reward_ad2") ?: snapshot.getDouble("rewardAmount") ?: 3.0
+                    rewardAd3 = snapshot.getDouble("reward_ad3") ?: snapshot.getDouble("rewardAmount") ?: 1.0
                 }
             }
     }
@@ -127,6 +127,7 @@ fun VideoAdsScreen(onBack: () -> Unit) {
                         transaction.update(userRef, "totalEarned", totalEarned + rewardAmount)
                         transaction.update(userRef, "lastAdCategoryTaskTime", System.currentTimeMillis())
                     }.await()
+                    com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, rewardAmount)
                     snackbarMessage = "Congratulations! You earned ৳$rewardAmount"
                 }
             } catch (e: Exception) {

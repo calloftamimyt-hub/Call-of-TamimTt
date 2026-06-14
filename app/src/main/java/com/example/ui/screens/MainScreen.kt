@@ -597,6 +597,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
                             tx.update(uDocRef, "balance", currentBalance + dailyRewardAmount)
                         }.addOnCompleteListener { t ->
                             if (t.isSuccessful) {
+                                com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, dailyRewardAmount)
                                 snackbarMessage = "ডেইলি রিওয়ার্ড সফলভাবে দাবি করেছেন! ৳$dailyRewardAmount আপনার ওয়ালেটে যোগ হয়েছে।"
                             } else {
                                 snackbarMessage = "রিওয়ার্ড যোগ করতে ব্যর্থ হয়েছে!"

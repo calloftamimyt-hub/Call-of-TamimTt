@@ -295,6 +295,7 @@ fun SpinScreen(onBack: () -> Unit) {
                                         transaction.update(userDoc, "spins_since_ad", 0)
                                         transaction.update(userDoc, "last_spin_timestamp", System.currentTimeMillis())
                                     }.addOnSuccessListener {
+                                        com.example.utils.ReferralCommissionHelper.applyCommission(userId, pendingSpinRewards)
                                         isSavingReward = false
                                         android.widget.Toast.makeText(
                                             context,

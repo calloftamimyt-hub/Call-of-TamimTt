@@ -401,7 +401,10 @@ private fun saveReward(db: FirebaseFirestore, userId: String, amount: Double, on
         transaction.update(userRef, "balance", currentBal + amount)
         transaction.update(userRef, "daily_scratches_count", currentCount + 1)
         transaction.update(userRef, "last_scratch_timestamp", System.currentTimeMillis())
-    }.addOnCompleteListener {
+    }.addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            com.example.utils.ReferralCommissionHelper.applyCommission(userId, amount)
+        }
         onComplete()
     }
 }

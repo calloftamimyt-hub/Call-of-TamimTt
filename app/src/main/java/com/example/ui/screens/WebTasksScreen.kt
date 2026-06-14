@@ -244,6 +244,7 @@ fun WebTaskExecutionScreen(task: WebTask, onBack: () -> Unit, onRewardEarned: ()
                     transaction.update(userRef, "balance", currentBal + task.reward)
                     transaction.update(userRef, "totalEarned", currentEarn + task.reward)
                 }.await()
+                com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, task.reward)
                 onRewardEarned()
             } catch (e: Exception) {
             } finally {

@@ -35,7 +35,7 @@ data class QuizQuestion(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QuizScreen(onBack: () -> Unit) {
+fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
     
@@ -205,9 +205,15 @@ fun QuizScreen(onBack: () -> Unit) {
     val currentUserUid = UserSession.getUid(context)
 
     // Listen to quiz settings in real-time independently of user authentication timing
-    LaunchedEffect(Unit) {
+    LaunchedEffect(taskTitle) {
+        val settingsDoc = when {
+            taskTitle.contains("Bangla", ignoreCase = true) -> "bangla_quiz"
+            taskTitle.contains("English", ignoreCase = true) -> "english_quiz"
+            taskTitle.contains("Google", ignoreCase = true) -> "google_quiz"
+            else -> "quiz_settings"
+        }
         val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-        db.collection("settings").document("quiz_settings")
+        db.collection("settings").document(settingsDoc)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     android.util.Log.e("QuizScreen", "Settings listen failed", error)
@@ -229,6 +235,7 @@ fun QuizScreen(onBack: () -> Unit) {
                         is String -> rawBreak.toIntOrNull() ?: 25
                         else -> snapshot.getLong("break_duration")?.toInt() ?: 25
                     }
+                    // Limit is dynamically checked if available, but currently not used structurally in UI here unless we add it
                 }
                 isLoadingSettings = false
             }
@@ -570,6 +577,9 @@ fun QuizScreen(onBack: () -> Unit) {
                                                 )
                                                 tx.set(nDoc, notifyData)
                                             }.addOnCompleteListener { taskResult ->
+                                                if(taskResult.isSuccessful) {
+                                                    com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, rewardAmount)
+                                                }
                                                 showRewardDialog = true
                                             }
                                         }

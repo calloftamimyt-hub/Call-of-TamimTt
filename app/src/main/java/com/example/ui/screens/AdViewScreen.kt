@@ -178,6 +178,7 @@ fun AdViewScreen(task: EarningTask, onBack: () -> Unit) {
                             isSubmittingTransaction = false
                             adsWatched = 0
                             if (taskResult.isSuccessful) {
+                                com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, rewardAmount)
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar("অভিনন্দন! সফলভাবে ৳${String.format("%.2f", rewardAmount)} বোনাস পেয়েছেন।")
                                 }

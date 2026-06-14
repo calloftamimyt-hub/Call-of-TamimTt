@@ -218,9 +218,10 @@ fun DailyCheckInScreen(onBack: () -> Unit) {
                     transaction.update(userRef, "balance", currentBalance + claimAmount)
                     transaction.update(userRef, "last_checkin_date", todayDate)
                 }.addOnSuccessListener {
+                    val claimAmount = if (amount <= 0.0) 2.0 else amount
+                    com.example.utils.ReferralCommissionHelper.applyCommission(userId, claimAmount)
                     isCheckingIn = false
                     lastCheckInDate = todayDate
-                    val claimAmount = if (amount <= 0.0) 2.0 else amount
                     showSuccessMessage = "অভিনন্দন! আপনি সফলভাবে ৳$claimAmount পুরস্কার পেয়েছেন।"
                     
                     // Show local system notification (works even when app is closed, locked, screen is off, etc.)

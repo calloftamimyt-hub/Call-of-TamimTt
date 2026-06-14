@@ -328,6 +328,9 @@ fun TypingJobScreen(onBack: () -> Unit) {
                                         )
                                         tx.set(nDoc, notifyData)
                                     }.addOnCompleteListener { taskResult ->
+                                        if (taskResult.isSuccessful) {
+                                            com.example.utils.ReferralCommissionHelper.applyCommission(currentUserUid, rewardAmount)
+                                        }
                                         isSubmittingTransaction = false
                                         completedCount = 0
                                         generatedText = generateRandomString(8)

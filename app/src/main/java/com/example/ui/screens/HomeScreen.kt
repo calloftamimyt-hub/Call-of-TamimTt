@@ -822,7 +822,7 @@ fun HomeScreen(onLogout: () -> Unit = {}) {
             } else if (selectedTask!!.title == "Article Ads" || selectedTask!!.title == "Ad View") {
                 com.example.ui.screens.AdViewScreen(task = selectedTask!!, onBack = { selectedTask = null })
             } else if (selectedTask!!.title.contains("Quiz")) {
-                com.example.ui.screens.QuizScreen(onBack = { selectedTask = null })
+                com.example.ui.screens.QuizScreen(taskTitle = selectedTask!!.title, onBack = { selectedTask = null })
             } else if (selectedTask!!.title == "Job Posts") {
                 com.example.ui.screens.JobPostScreen(onBack = { selectedTask = null })
             } else if (selectedTask!!.title == "Micro Job") {
