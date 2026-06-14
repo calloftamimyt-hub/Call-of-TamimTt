@@ -12,14 +12,29 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // 1. App Settings & Config (Read-only for users, updated by Admins from Firebase Console)
+    // Check if the authenticated user is an Admin
+    // You must manually add a field `role: "admin"` or `isAdmin: true` 
+    // to your User document in the Firebase Console to act as an admin,
+    // or log in with the designated admin email.
+    function isAdmin() {
+      return isAuthenticated() && 
+        (
+          request.auth.token.email == 'its.me.calloftamim@gmail.com' ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == 'admin' ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true)
+          )
+        );
+    }
+
+    // 1. App Settings & Config (Read-only for regular users, updated by Admins)
     match /settings/{settingDoc} {
       allow read: if true;
-      allow write: if false; 
+      allow write: if isAdmin(); 
     }
     match /banners/{bannerId} {
-      allow read: if isAuthenticated();
-      allow write: if false;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // 2. User Profiles
@@ -35,116 +50,167 @@ service cloud.firestore {
       // ONLY the owner can freely update their own user data.
       // We also allow other authenticated users to ONLY update the 'balance' field
       // (needed for adding referral bonuses).
-      allow update: if isOwner(userId) || 
+      // Admins can update any user
+      allow update: if isOwner(userId) || isAdmin() || 
                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']));
                    
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
     
     // 3. Transactions & Requests (High Security - Strictly User Tied)
     match /withdrawals/{requestId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false; // Prevent client apps from changing pending withdrawals
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     match /deposits/{depositId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     match /recharge_requests/{id} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     // 4. External Account Service Integrations
     match /gmail_requests/{id} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
     match /facebook_requests/{id} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
     match /instagram_requests/{id} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
     match /whatsapp_requests/{id} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
     match /telegram_requests/{id} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     // 5. Tasks, Jobs, Submissions
     match /task_posts/{taskId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin();
     }
     match /tasks/{taskId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin();
     }
     match /job_posts/{jobId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated(); // All auth users can read available jobs
-      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated(); 
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+    match /job_post_submissions/{submissionId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /web_tasks/{taskId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
     match /submissions/{submissionId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Users can see their own submissions
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
     match /micro_jobs/{jobId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAdmin();
     }
     match /micro_job_submissions/{submissionId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     // 6. Drive Packages
     match /drive_offers/{offerId} {
        allow read: if isAuthenticated();
-       allow write: if false;
+       allow write: if isAdmin();
     }
     match /drive_orders/{orderId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     // 7. General logs/notifications
     match /notifications/{notificationId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated(); // For system generation logs
-      allow update, delete: if false;
+      allow update, delete: if isAdmin();
     }
     match /history/{historyId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
     match /transactions/{transactionId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
+    // 9. Additional Config Collections (Often used by Admin Panels as root collections)
+    match /referral/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /bonus_rules/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /video_ads/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /typing_jobs/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /quiz_jobs/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /bangla_quiz/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /english_quiz/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /google_quiz/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /adsense/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
     // 8. Secure Default Fallback
     match /{document=**} {
       allow read, write: if false;

@@ -93,11 +93,15 @@ fun ScratchCardScreen(onBack: () -> Unit) {
                     isEnabled = snapshot.getBoolean("is_enabled") ?: true
                     breakTimeMinutes = snapshot.getLong("break_time")?.toInt() ?: 5
                     dailyLimit = snapshot.getLong("daily_limit")?.toInt() ?: 10
-                    val rewardsStr = snapshot.getString("rewards") ?: "0.1, 0.2, 0.5, 1.0, 2.0"
+                    val rewardsStr = snapshot.getString("rewards") ?: "5,10,2"
                     rewardsList = rewardsStr.split(",").mapNotNull { it.trim().toDoubleOrNull() }
-                    if (rewardsList.isEmpty()) rewardsList = listOf(0.1)
+                    if (rewardsList.isEmpty()) rewardsList = listOf(5.0)
+                    
+                    // Assign sequential reward based on how many scratches user has done
+                    // If userScratchesCount exceeds the list, it loops back.
                     if (!isScratched && scratchCardAmount == 0.0) {
-                        scratchCardAmount = rewardsList.random()
+                        val index = userScratchesCount % rewardsList.size
+                        scratchCardAmount = rewardsList[index]
                     }
                 }
             }
@@ -373,13 +377,15 @@ fun ScratchCardScreen(onBack: () -> Unit) {
             onDismissRequest = { 
                 showRewardDialog = false
                 isScratched = false
-                scratchCardAmount = rewardsList.random()
+                val newIndex = userScratchesCount % rewardsList.size
+                scratchCardAmount = rewardsList[newIndex]
             },
             confirmButton = {
                 Button(onClick = { 
                     showRewardDialog = false
                     isScratched = false
-                    scratchCardAmount = rewardsList.random()
+                    val newIndex = userScratchesCount % rewardsList.size
+                    scratchCardAmount = rewardsList[newIndex]
                 }) {
                     Text("Great!")
                 }

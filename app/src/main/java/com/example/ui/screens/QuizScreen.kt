@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -198,6 +199,8 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
     // Dynamic Admin Settings loaded from Firestore settings/quiz_settings
     var rewardAmount by remember { mutableStateOf(2.50) }
     var breakDuration by remember { mutableStateOf(25) }
+    var dailyLimit by remember { mutableStateOf(10) }
+    var dailyQuizCount by remember { mutableStateOf(0) }
     var lastQuizTime by remember { mutableStateOf(0L) }
     var isLoadingSettings by remember { mutableStateOf(true) }
 
@@ -235,7 +238,13 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
                         is String -> rawBreak.toIntOrNull() ?: 25
                         else -> snapshot.getLong("break_duration")?.toInt() ?: 25
                     }
-                    // Limit is dynamically checked if available, but currently not used structurally in UI here unless we add it
+                    
+                    val rawLimit = snapshot.get("daily_limit")
+                    dailyLimit = when (rawLimit) {
+                        is Number -> rawLimit.toInt()
+                        is String -> rawLimit.toIntOrNull() ?: 10
+                        else -> snapshot.getLong("daily_limit")?.toInt() ?: 10
+                    }
                 }
                 isLoadingSettings = false
             }
@@ -257,6 +266,17 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
                             is String -> value.toLongOrNull() ?: 0L
                             else -> 0L
                         }
+                        dailyQuizCount = when (val value = snapshot.get("daily_quiz_count")) {
+                            is Number -> value.toInt()
+                            is String -> value.toIntOrNull() ?: 0
+                            else -> 0
+                        }
+                        val lastDate = snapshot.getLong("last_quiz_date") ?: 0L
+                        val currentDate = System.currentTimeMillis() / (1000 * 60 * 60 * 24)
+                        if (lastDate != currentDate) {
+                             db.collection("users").document(currentUserUid)
+                                 .update("daily_quiz_count", 0, "last_quiz_date", currentDate)
+                        }
                     }
                 }
         }
@@ -266,7 +286,7 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
     var remainingSeconds by remember { mutableStateOf(0L) }
     LaunchedEffect(lastQuizTime, breakDuration) {
         while (true) {
-            val totalBreakMs = breakDuration.toLong() * 60L * 1000L
+            val totalBreakMs = breakDuration.toLong() * 1000L // Treated as seconds
             val elapsedMs = System.currentTimeMillis() - lastQuizTime
             val diffMs = totalBreakMs - elapsedMs
             if (diffMs > 0) {
@@ -358,6 +378,36 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
                 if (isLoadingSettings) {
                     Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
+                    }
+                } else if (dailyQuizCount >= dailyLimit) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Daily Limit Reached",
+                            modifier = Modifier.size(72.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (isEnglish) "Daily Limit Reached!" else "আজকের কুইজ লিমিট শেষ!",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (isEnglish) "Come back tomorrow for more quizzes." else "আরও কুইজ খেলতে আগামী কাল আবার আসুন।",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = Color.Gray
+                        )
                     }
                 } else if (remainingSeconds > 0) {
                     // RENDERING PREMIUM BREAK ACTIVE SCREEN WITH SECONDS ACCURACY countdown
@@ -560,8 +610,14 @@ fun QuizScreen(taskTitle: String = "Quiz", onBack: () -> Unit) {
                                                     is String -> v.toDoubleOrNull() ?: 0.0
                                                     else -> 0.0
                                                 }
+                                                val currentQuizCount = when (val v = userSnap.get("daily_quiz_count")) {
+                                                    is Number -> v.toInt()
+                                                    is String -> v.toIntOrNull() ?: 0
+                                                    else -> 0
+                                                }
                                                 tx.update(uDocRef, "balance", currentBalance + rewardAmount)
                                                 tx.update(uDocRef, "earnings", currentEarnings + rewardAmount)
+                                                tx.update(uDocRef, "daily_quiz_count", currentQuizCount + 1)
                                                 tx.update(uDocRef, "lastQuizTime", System.currentTimeMillis())
                                                 tx.update(uDocRef, "lastAdCategoryTaskTime", System.currentTimeMillis())
                                                 
