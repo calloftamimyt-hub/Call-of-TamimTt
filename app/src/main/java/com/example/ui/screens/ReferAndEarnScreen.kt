@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,6 +39,12 @@ fun ReferAndEarnScreen(onBack: () -> Unit) {
     var referralCode by remember { mutableStateOf("") }
     var rewardAmount by remember { mutableStateOf(10.0) }
     var isEnabled by remember { mutableStateOf(true) }
+    var showHistoryScreen by remember { mutableStateOf(false) }
+
+    if (showHistoryScreen) {
+        ReferralHistoryScreen(onBack = { showHistoryScreen = false })
+        return
+    }
 
     DisposableEffect(userId) {
         if (userId.isEmpty()) {
@@ -96,6 +103,14 @@ fun ReferAndEarnScreen(onBack: () -> Unit) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showHistoryScreen = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.History,
+                            contentDescription = "Referral History"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
