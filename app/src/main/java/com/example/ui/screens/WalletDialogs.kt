@@ -395,10 +395,12 @@ fun WithdrawDialog(availableBalance: Double, onDismiss: () -> Unit, onSubmitted:
     var selectedMethod by remember { mutableStateOf("bKash") }
     val methods = listOf("bKash", "Nagad")
     
-    val withdrawSuggestions = listOf("100", "200", "500", "1000", "2000", "5000")
+    val withdrawSuggestions = listOf("100", "200", "500", "1000", "2000", "3000", "5000", "10000")
     var minWithdrawLimit by remember { mutableStateOf(100.0) }
     var errorText by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
+
+    val darkBlue = Color(0xFF0D47A1)
 
     LaunchedEffect(Unit) {
         val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
@@ -437,172 +439,328 @@ fun WithdrawDialog(availableBalance: Double, onDismiss: () -> Unit, onSubmitted:
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         FullScreenDialogModifier()
         Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+            Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+                // Customized Header (Premium layout with dark blue text and cross button)
                 TopAppBar(
-                    title = { Text("Withdraw Funds") },
-                    navigationIcon = {
-                        IconButton(onClick = onDismiss, enabled = !isSubmitting) { Icon(Icons.Filled.Close, contentDescription = "Close") }
-                    }
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Available Balance", color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("৳${String.format("%.2f", availableBalance)}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Minimum withdrawal limit:", style = MaterialTheme.typography.bodyMedium)
-                        Text("৳${String.format("%.2f", minWithdrawLimit)}", fontWeight = FontWeight.Bold)
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = { 
-                        amount = it
-                        validateAmount(it, minWithdrawLimit)
+                    title = { 
+                        Text(
+                            text = "Withdraw Funds", 
+                            color = darkBlue, 
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ) 
                     },
-                    label = { Text("Amount (৳)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isSubmitting,
-                    isError = errorText.isNotEmpty(),
-                    supportingText = { if (errorText.isNotEmpty()) Text(errorText) else Text("Enter withdraw amount") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    navigationIcon = {
+                        IconButton(onClick = onDismiss, enabled = !isSubmitting) {
+                            Icon(Icons.Filled.Close, contentDescription = "Close", tint = darkBlue)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    withdrawSuggestions.forEach { suggestion ->
-                        SuggestionChip(
-                            onClick = { 
-                                if (!isSubmitting) {
-                                    amount = suggestion
-                                    validateAmount(suggestion, minWithdrawLimit)
-                                }
-                            },
-                            label = { Text("৳$suggestion") }
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(20.dp))
-                
-                Text("Withdraw Method", fontWeight = FontWeight.Medium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                    methods.forEach { method ->
-                        FilterChip(
-                            selected = selectedMethod == method,
-                            onClick = { if (!isSubmitting) selectedMethod = method },
-                            label = { Text(method) },
-                            modifier = Modifier.padding(end = 8.dp),
-                            enabled = !isSubmitting
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = accountNo,
-                    onValueChange = { accountNo = it },
-                    label = { Text("Account Number") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isSubmitting,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                if (isSubmitting) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    Button(
-                        onClick = {
-                            val reqAmount = amount.toDoubleOrNull() ?: 0.0
-                            if (reqAmount >= minWithdrawLimit && reqAmount <= availableBalance && accountNo.isNotBlank()) {
-                                isSubmitting = true
-                                val currentUserUid = UserSession.getUid(context)
-                                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-                                val withdrawDoc = db.collection("withdrawals").document()
-                                val withdrawId = withdrawDoc.id
-                                val withdrawData = hashMapOf(
-                                    "id" to withdrawId,
-                                    "userId" to currentUserUid,
-                                    "amount" to reqAmount,
-                                    "method" to selectedMethod,
-                                    "paymentMethod" to selectedMethod,
-                                    "accountNo" to accountNo,
-                                    "accountNumber" to accountNo,
-                                    "status" to "pending",
-                                    "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
-                                    "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
-                                )
-                                db.runTransaction { transaction ->
-                                    val userRef = db.collection("users").document(currentUserUid)
-                                    val userSnap = transaction.get(userRef)
-                                    val currentBalance = when (val bal = userSnap.get("balance")) {
-                                        is Number -> bal.toDouble()
-                                        is String -> bal.toDoubleOrNull() ?: 0.0
-                                        else -> 0.0
-                                    }
 
-                                    if (currentBalance >= reqAmount) {
-                                        transaction.update(userRef, "balance", currentBalance - reqAmount)
-                                        val newWithdrawData = withdrawData.toMutableMap()
-                                        newWithdrawData["amount_deducted"] = true
-                                        transaction.set(withdrawDoc, newWithdrawData)
-                                    } else {
-                                        throw Exception("Insufficient balance")
-                                    }
-                                }.addOnCompleteListener { task ->
-                                    isSubmitting = false
-                                    if (task.isSuccessful) {
-                                        com.example.NotificationHelper.showNotification(
-                                            context = context,
-                                            title = "Withdrawal Request Submitted",
-                                            message = "Your withdrawal request has been submitted successfully.",
-                                            type = NotificationType.INFO
-                                        )
-                                        onSubmitted(reqAmount, selectedMethod)
-                                        onDismiss()
-                                    } else {
-                                        errorText = task.exception?.localizedMessage ?: "Transaction failed"
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Select Withdrawal Method", 
+                        fontWeight = FontWeight.Bold, 
+                        color = darkBlue,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+
+                    // 1. Payment method cards at the very top (bKash & Nagad)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        listOf("bKash", "Nagad").forEach { method ->
+                            val isSelected = selectedMethod == method
+                            val logoUrl = if (method == "bKash") {
+                                "https://res.cloudinary.com/dhlzcea1t/image/upload/v1781435647/zjsxlhs1456rhzoxwgpm.png"
+                            } else {
+                                "https://res.cloudinary.com/dhlzcea1t/image/upload/v1781435648/vaqawkmxc67mcbinxnzb.jpg"
+                            }
+
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { if (!isSubmitting) selectedMethod = method },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    width = if (isSelected) 2.5.dp else 1.dp,
+                                    color = if (isSelected) darkBlue else Color(0xFFE0E0E0)
+                                )
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(95.dp)
+                                        .background(if (isSelected) Color(0x0C0D47A1) else Color.Transparent)
+                                        .padding(8.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = logoUrl,
+                                        contentDescription = "$method Logo",
+                                        modifier = Modifier
+                                            .size(72.dp)
+                                            .align(Alignment.Center)
+                                            .clip(RoundedCornerShape(8.dp)),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                                    )
+                                    
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .size(20.dp)
+                                                .background(darkBlue, shape = androidx.compose.foundation.shape.CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = androidx.compose.material.icons.Icons.Default.Check,
+                                                contentDescription = "Selected",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        enabled = amount.isNotBlank() && errorText.isEmpty() && accountNo.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) >= minWithdrawLimit
+                        }
+                    }
+
+                    // Available Balance info
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text("Confirm Withdraw", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, darkBlue.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Available Balance", color = Color.Gray, fontSize = 12.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("৳${String.format("%.2f", availableBalance)}", fontWeight = FontWeight.Bold, color = darkBlue, fontSize = 16.sp)
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, darkBlue.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Min Withdrawal", color = Color.Gray, fontSize = 12.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("৳${String.format("%.2f", minWithdrawLimit)}", fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 16.sp)
+                            }
+                        }
+                    }
+
+                    // Account Number input
+                    Text(
+                        text = "Account Number (${selectedMethod})",
+                        fontWeight = FontWeight.Bold,
+                        color = darkBlue,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    OutlinedTextField(
+                        value = accountNo,
+                        onValueChange = { accountNo = it },
+                        placeholder = { Text("আপনার ${selectedMethod} পার্সোনাল নাম্বার দিন", color = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        enabled = !isSubmitting,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = darkBlue,
+                            unfocusedBorderColor = Color(0xFFB0BEC5),
+                            focusedLabelColor = darkBlue,
+                            unfocusedLabelColor = Color.Gray,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
+                        )
+                    )
+
+                    // Amount input
+                    Text(
+                        text = "Amount (৳)",
+                        fontWeight = FontWeight.Bold,
+                        color = darkBlue,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = { 
+                            amount = it
+                            validateAmount(it, minWithdrawLimit)
+                        },
+                        placeholder = { Text("কত টাকা উত্তোলন করতে চান", color = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        enabled = !isSubmitting,
+                        singleLine = true,
+                        isError = errorText.isNotEmpty(),
+                        supportingText = { if (errorText.isNotEmpty()) Text(errorText) else null },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = darkBlue,
+                            unfocusedBorderColor = Color(0xFFB0BEC5),
+                            errorBorderColor = Color.Red,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
+                        )
+                    )
+
+                    // Suggested Amount Chips custom layout (Grid, 4 items per line, aligned perfectly)
+                    Text(
+                        text = "Suggested Amount",
+                        fontWeight = FontWeight.Bold,
+                        color = darkBlue,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    val chunkedSuggestions = withdrawSuggestions.chunked(4)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        chunkedSuggestions.forEach { rowItems ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowItems.forEach { suggestion ->
+                                    val isSelected = amount == suggestion
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .background(
+                                                color = if (isSelected) darkBlue else Color.White,
+                                                shape = RoundedCornerShape(10.dp)
+                                            )
+                                            .border(
+                                                width = 1.dp,
+                                                color = darkBlue,
+                                                shape = RoundedCornerShape(10.dp)
+                                            )
+                                            .clickable {
+                                                if (!isSubmitting) {
+                                                    amount = suggestion
+                                                    validateAmount(suggestion, minWithdrawLimit)
+                                                }
+                                            }
+                                            .padding(vertical = 10.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "৳$suggestion",
+                                            color = if (isSelected) Color.White else darkBlue,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp
+                                        )
+                                    }
+                                }
+                                if (rowItems.size < 4) {
+                                    repeat(4 - rowItems.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // Submit button (with requested slightly rounded corners)
+                    if (isSubmitting) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = darkBlue)
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                val reqAmount = amount.toDoubleOrNull() ?: 0.0
+                                if (reqAmount >= minWithdrawLimit && reqAmount <= availableBalance && accountNo.isNotBlank()) {
+                                    isSubmitting = true
+                                    val currentUserUid = UserSession.getUid(context)
+                                    val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                    val withdrawDoc = db.collection("withdrawals").document()
+                                    val withdrawId = withdrawDoc.id
+                                    val withdrawData = hashMapOf(
+                                        "id" to withdrawId,
+                                        "userId" to currentUserUid,
+                                        "amount" to reqAmount,
+                                        "method" to selectedMethod,
+                                        "paymentMethod" to selectedMethod,
+                                        "accountNo" to accountNo,
+                                        "accountNumber" to accountNo,
+                                        "status" to "pending",
+                                        "timestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+                                        "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                                    )
+                                    db.runTransaction { transaction ->
+                                        val userRef = db.collection("users").document(currentUserUid)
+                                        val userSnap = transaction.get(userRef)
+                                        val currentBalance = when (val bal = userSnap.get("balance")) {
+                                            is Number -> bal.toDouble()
+                                            is String -> bal.toDoubleOrNull() ?: 0.0
+                                            else -> 0.0
+                                        }
+
+                                        if (currentBalance >= reqAmount) {
+                                            transaction.update(userRef, "balance", currentBalance - reqAmount)
+                                            val newWithdrawData = withdrawData.toMutableMap()
+                                            newWithdrawData["amount_deducted"] = true
+                                            transaction.set(withdrawDoc, newWithdrawData)
+                                        } else {
+                                            throw Exception("Insufficient balance")
+                                        }
+                                    }.addOnCompleteListener { task ->
+                                        isSubmitting = false
+                                        if (task.isSuccessful) {
+                                            com.example.NotificationHelper.showNotification(
+                                                context = context,
+                                                title = "Withdrawal Request Submitted",
+                                                message = "Your withdrawal request has been submitted successfully.",
+                                                type = NotificationType.INFO
+                                            )
+                                            onSubmitted(reqAmount, selectedMethod)
+                                            onDismiss()
+                                        } else {
+                                            errorText = task.exception?.localizedMessage ?: "Transaction failed"
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(bottom = 24.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = darkBlue,
+                                disabledContainerColor = darkBlue.copy(alpha = 0.5f)
+                            ),
+                            enabled = amount.isNotBlank() && errorText.isEmpty() && accountNo.isNotBlank() && (amount.toDoubleOrNull() ?: 0.0) >= minWithdrawLimit
+                        ) {
+                            Text("Confirm Withdraw", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 }
             }
